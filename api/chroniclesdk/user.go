@@ -77,6 +77,21 @@ type AdminLog struct {
 	InstanceNames []string  `json:"instance_names"`
 }
 
+type AdminBulkLogRequest struct {
+	LogIDs []uuid.UUID `json:"log_ids"`
+}
+
+type AdminBulkLogFailure struct {
+	LogGroupID uuid.UUID `json:"log_group_id"`
+	Detail     string    `json:"detail"`
+}
+
+type AdminBulkDeleteResponse struct {
+	Requested int                   `json:"requested"`
+	Deleted   int                   `json:"deleted"`
+	Failed    []AdminBulkLogFailure `json:"failed"`
+}
+
 // DataGrant represents a storage grant given to a user from various sources
 type DataGrant struct {
 	ID           string     `json:"id"`
@@ -132,6 +147,12 @@ type AdminBulkReparseResponse struct {
 	Enqueued   int                       `json:"enqueued"`
 	MinVersion string                    `json:"min_version"`
 	Failed     []AdminBulkReparseFailure `json:"failed"`
+}
+
+type AdminBulkSelectedReparseResponse struct {
+	Requested int                   `json:"requested"`
+	Enqueued  int                   `json:"enqueued"`
+	Failed    []AdminBulkLogFailure `json:"failed"`
 }
 
 type SiteConfig struct {

@@ -37,11 +37,36 @@ export interface AdminBulkReparseFailure {
 }
 
 // From chroniclesdk/user.go
+export interface AdminBulkLogFailure {
+    readonly log_group_id: string;
+    readonly detail: string;
+}
+
+// From chroniclesdk/user.go
 export interface AdminBulkReparseResponse {
     readonly matched: number;
     readonly enqueued: number;
     readonly min_version: string;
     readonly failed: readonly AdminBulkReparseFailure[];
+}
+
+// From chroniclesdk/user.go
+export interface AdminBulkDeleteResponse {
+    readonly requested: number;
+    readonly deleted: number;
+    readonly failed: readonly AdminBulkLogFailure[];
+}
+
+// From chroniclesdk/user.go
+export interface AdminBulkLogRequest {
+    readonly log_ids: readonly string[];
+}
+
+// From chroniclesdk/user.go
+export interface AdminBulkSelectedReparseResponse {
+    readonly requested: number;
+    readonly enqueued: number;
+    readonly failed: readonly AdminBulkLogFailure[];
 }
 
 // From chroniclesdk/user.go
