@@ -2,15 +2,57 @@ package registry
 
 import (
 	"context"
+	"errors"
 	"log/slog"
+	"strings"
 	"sync"
 
 	"github.com/Emyrk/chronicle/combatlog/parser/vanilla/state/encounters/instances"
 	"github.com/Emyrk/chronicle/database"
 	"github.com/Emyrk/chronicle/database/authz"
 	"github.com/Emyrk/chronicle/database/pubsub"
+	"github.com/Emyrk/chronicle/internal/services"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5"
 )
+
+func worldInstanceFactory(
+	tmpl database.ListWorldInstanceTemplatesRow,
+	zoneNames []database.WorldInstanceZoneName,
+	units []database.ListWorldInstanceUnitsRow,
+) *instances.CommonFactory {
+	hostiles := make(map[uint32]instances.Identity)
+	for _, u := range units {
+		id := instances.Identity{Hostile: u.Affiliation == database.UnitAffiliationHostile}
+		if u.Boss {
+			id.Boss = true
+			if u.EncounterName.Valid {
+				id.EncounterName = u.EncounterName.String
+			}
+		}
+		hostiles[uint32(u.EntryID)] = id
+	}
+
+	names := make([]string, 0, len(zoneNames))
+	displayName := strings.TrimSpace(tmpl.Name)
+	for _, zn := range zoneNames {
+		names = append(names, zn.ZoneName)
+		if displayName == "" {
+			displayName = strings.TrimSpace(zn.DisplayName)
+		}
+	}
+
+	factory := &instances.CommonFactory{
+		Name:      displayName,
+		ZoneNames: names,
+		Hostiles:  instances.FromMap(hostiles),
+	}
+	if tmpl.MapID.Valid {
+		factory.MapIDs = []uint32{uint32(tmpl.MapID.Int32)}
+	}
+
+	return factory
+}
 
 const InstanceRegistryChannel = "instance_registry_changed"
 
@@ -91,6 +133,21 @@ func (dr *DBRegistry) Reload(ctx context.Context) error {
 // Does NOT publish — used internally and by the pubsub listener to avoid loops.
 func (dr *DBRegistry) reload(ctx context.Context) error {
 	r := NewRegistry(dr.logger)
+	if dr.fallback != nil {
+		r.SetFallback(dr.fallback)
+	}
+
+	_, err := dr.store.GetWoWServerByName(ctx, services.ServerName)
+	if err != nil {
+		if errors.Is(err, pgx.ErrNoRows) {
+			dr.logger.Warn("no active server row found for DB-backed registry", slog.String("server", services.ServerName))
+			dr.mu.Lock()
+			dr.registry = r
+			dr.mu.Unlock()
+			return nil
+		}
+		return err
+	}
 
 	templates, err := dr.store.ListWorldInstanceTemplates(ctx)
 	if err != nil {
@@ -118,46 +175,15 @@ func (dr *DBRegistry) reload(ctx context.Context) error {
 		unitsByInstance[u.InstanceID] = append(unitsByInstance[u.InstanceID], u)
 	}
 
+	loaded := 0
 	for _, tmpl := range templates {
-		zoneNames := zoneNamesByInstance[tmpl.ID]
-		units := unitsByInstance[tmpl.ID]
-
-		// Build Identity map from DB units.
-		hostiles := make(map[uint32]instances.Identity)
-		for _, u := range units {
-			id := instances.Identity{
-				Hostile: u.Affiliation == database.UnitAffiliationHostile,
-			}
-			if u.Boss {
-				id.Boss = true
-				if u.EncounterName.Valid {
-					id.EncounterName = u.EncounterName.String
-				}
-			}
-			hostiles[uint32(u.EntryID)] = id
-		}
-
-		// Build zone name list.
-		names := make([]string, 0, len(zoneNames))
-		for _, zn := range zoneNames {
-			names = append(names, zn.ZoneName)
-		}
-
-		factory := &instances.CommonFactory{
-			Name:      tmpl.Name,
-			ZoneNames: names,
-			Hostiles:  instances.FromMap(hostiles),
-		}
-
-		r.RegisterEntry(FromCommonFactory(factory))
-	}
-
-	if dr.fallback != nil {
-		r.SetFallback(dr.fallback)
+		r.RegisterEntry(FromCommonFactory(worldInstanceFactory(tmpl, zoneNamesByInstance[tmpl.ID], unitsByInstance[tmpl.ID])))
+		loaded++
 	}
 
 	dr.logger.Info("reloaded instance registry from database",
-		slog.Int("instances", len(templates)),
+		slog.String("server", services.ServerName),
+		slog.Int("instances", loaded),
 	)
 
 	dr.mu.Lock()
