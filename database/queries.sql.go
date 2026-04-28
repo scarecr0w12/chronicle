@@ -700,9 +700,26 @@ func (q *sqlQuerier) InstanceEvent(ctx context.Context, arg InstanceEventParams)
 const countAllWoWLogGroups = `-- name: CountAllWoWLogGroups :one
 SELECT COUNT(*)::int FROM wow_log_groups
 LEFT JOIN LATERAL (
-  SELECT array_agg(li.name) AS instance_names
-  FROM log_instances li
-  WHERE li.log_group_id = wow_log_groups.id
+	SELECT COALESCE(array_agg(inst_names.name ORDER BY inst_names.name), ARRAY[]::text[]) AS instance_names
+	FROM (
+		SELECT DISTINCT li.name
+		FROM log_instances li
+		WHERE li.log_group_id = wow_log_groups.id
+			AND btrim(li.name) <> ''
+
+		UNION
+
+		SELECT sm.instance_name AS name
+		FROM server_upload_meta sm
+		WHERE sm.log_group_id = wow_log_groups.id
+			AND btrim(sm.instance_name) <> ''
+			AND NOT EXISTS (
+				SELECT 1
+				FROM log_instances li
+				WHERE li.log_group_id = wow_log_groups.id
+					AND btrim(li.name) <> ''
+			)
+	) inst_names
 ) instances_agg ON true
 WHERE 
   CASE WHEN $1::uuid != '00000000-0000-0000-0000-000000000000'::uuid 
@@ -996,8 +1013,10 @@ FROM
     SELECT jsonb_build_object(
         'complete', CASE WHEN plg.id IS NOT NULL THEN to_jsonb(wow_log_groups.updated_at) ELSE NULL END,
         'instances', COALESCE((
-            SELECT jsonb_agg(inst_data)
+			SELECT jsonb_agg(inst_data ORDER BY instance_name)
             FROM (
+			  SELECT inst_data, instance_name
+			  FROM (
                 SELECT jsonb_build_object(
                     'id', li.id,
                     'name', li.name,
@@ -1008,16 +1027,43 @@ FROM
                         SELECT jsonb_agg(jsonb_build_object(
                             'id', e.id,
                             'instance_id', e.instance_id,
+							'boss', e.boss,
+							'name', e.name,
+							'kill_type', e.kill_type,
+							'remaining', e.remaining,
                             'start_time', e.start_time,
                             'end_time', e.end_time
                         ) ORDER BY e.start_time)
                         FROM log_instance_encounters e
                         WHERE e.instance_id = li.id
                     ), '[]'::jsonb)
-                ) AS inst_data
+								) AS inst_data,
+								li.name AS instance_name
                 FROM log_instances li
                 WHERE li.log_group_id = wow_log_groups.id
-                ORDER BY li.name
+				  AND btrim(li.name) <> ''
+
+				UNION ALL
+
+				SELECT jsonb_build_object(
+					'id', wow_log_groups.id,
+					'name', sm.instance_name,
+					'slug', NULL,
+					'realm_id', sm.realm_id,
+					'log_group_id', wow_log_groups.id,
+					'encounters', '[]'::jsonb
+								) AS inst_data,
+								sm.instance_name AS instance_name
+				FROM server_upload_meta sm
+				WHERE sm.log_group_id = wow_log_groups.id
+				  AND btrim(sm.instance_name) <> ''
+				  AND NOT EXISTS (
+					SELECT 1
+					FROM log_instances li
+					WHERE li.log_group_id = wow_log_groups.id
+					  AND btrim(li.name) <> ''
+				  )
+			  ) ordered_instances
             ) sub
         ), '[]'::jsonb)
     ) AS output
@@ -1249,6 +1295,10 @@ FROM
                         SELECT jsonb_agg(jsonb_build_object(
                             'id', e.id,
                             'instance_id', e.instance_id,
+							'boss', e.boss,
+							'name', e.name,
+							'kill_type', e.kill_type,
+							'remaining', e.remaining,
                             'start_time', e.start_time,
                             'end_time', e.end_time
                         ) ORDER BY e.start_time)
@@ -1360,6 +1410,10 @@ FROM
                           SELECT jsonb_agg(jsonb_build_object(
                               'id', e.id,
                               'instance_id', e.instance_id,
+							  'boss', e.boss,
+							  'name', e.name,
+							  'kill_type', e.kill_type,
+							  'remaining', e.remaining,
                               'start_time', e.start_time,
                               'end_time', e.end_time
                           ) ORDER BY e.start_time)
@@ -1377,10 +1431,27 @@ FROM
     -- Instance names aggregate
     LEFT JOIN LATERAL (
       SELECT 
-        COALESCE(array_agg(li.name ORDER BY li.name), ARRAY[]::text[]) AS instance_names,
-        MIN(li.name) AS first_instance_name
-      FROM log_instances li
-      WHERE li.log_group_id = wow_log_groups.id
+				COALESCE(array_agg(inst_names.name ORDER BY inst_names.name), ARRAY[]::text[]) AS instance_names,
+				MIN(inst_names.name) AS first_instance_name
+			FROM (
+				SELECT DISTINCT li.name
+				FROM log_instances li
+				WHERE li.log_group_id = wow_log_groups.id
+					AND btrim(li.name) <> ''
+
+				UNION
+
+				SELECT sm.instance_name AS name
+				FROM server_upload_meta sm
+				WHERE sm.log_group_id = wow_log_groups.id
+					AND btrim(sm.instance_name) <> ''
+					AND NOT EXISTS (
+						SELECT 1
+						FROM log_instances li
+						WHERE li.log_group_id = wow_log_groups.id
+							AND btrim(li.name) <> ''
+					)
+			) inst_names
     ) instances_agg ON true
 WHERE
   -- Filter by user ID (skip if nil UUID)
@@ -1465,9 +1536,25 @@ func (q *sqlQuerier) ListAllWoWLogGroupsWithOwnerPaginated(ctx context.Context, 
 }
 
 const listDistinctInstanceNames = `-- name: ListDistinctInstanceNames :many
-SELECT DISTINCT li.name
-FROM log_instances li
-ORDER BY li.name ASC
+SELECT DISTINCT name
+FROM (
+	SELECT li.name
+	FROM log_instances li
+	WHERE btrim(li.name) <> ''
+
+	UNION
+
+	SELECT sm.instance_name AS name
+	FROM server_upload_meta sm
+	WHERE btrim(sm.instance_name) <> ''
+		AND NOT EXISTS (
+			SELECT 1
+			FROM log_instances li
+			WHERE li.log_group_id = sm.log_group_id
+				AND btrim(li.name) <> ''
+		)
+) names
+ORDER BY name ASC
 `
 
 func (q *sqlQuerier) ListDistinctInstanceNames(ctx context.Context) ([]string, error) {
@@ -2581,7 +2668,7 @@ func (q *sqlQuerier) GetInstanceEncounterCharacterFights(ctx context.Context, in
 
 const getInstancesByLogGroupID = `-- name: GetInstancesByLogGroupID :many
 SELECT
-  id, realm_id, log_group_id, name, hashed_slug, guild_id, capabilities, versions, recorder_name, recorder_guid, duplicate_group_id, realm_name, guild_name, guild_realm_id, guild_created_at
+  id, realm_id, log_group_id, name, hashed_slug, guild_id, capabilities, versions, recorder_name, recorder_guid, duplicate_group_id, start_time, end_time, realm_name, guild_name, guild_realm_id, guild_created_at
 FROM
   log_instances_guild
 WHERE
@@ -2609,6 +2696,8 @@ func (q *sqlQuerier) GetInstancesByLogGroupID(ctx context.Context, logGroupID uu
 			&i.RecorderName,
 			&i.RecorderGuid,
 			&i.DuplicateGroupID,
+			&i.StartTime,
+			&i.EndTime,
 			&i.RealmName,
 			&i.GuildName,
 			&i.GuildRealmID,
@@ -2742,7 +2831,7 @@ func (q *sqlQuerier) InsertParsedLogGroup(ctx context.Context, id uuid.UUID) err
 
 const instance = `-- name: Instance :one
 SELECT
-  id, realm_id, log_group_id, name, hashed_slug, guild_id, capabilities, versions, recorder_name, recorder_guid, duplicate_group_id, realm_name, guild_name, guild_realm_id, guild_created_at
+  id, realm_id, log_group_id, name, hashed_slug, guild_id, capabilities, versions, recorder_name, recorder_guid, duplicate_group_id, start_time, end_time, realm_name, guild_name, guild_realm_id, guild_created_at
 FROM
   log_instances_guild
 WHERE
@@ -2764,6 +2853,8 @@ func (q *sqlQuerier) Instance(ctx context.Context, id uuid.UUID) (LogInstancesGu
 		&i.RecorderName,
 		&i.RecorderGuid,
 		&i.DuplicateGroupID,
+		&i.StartTime,
+		&i.EndTime,
 		&i.RealmName,
 		&i.GuildName,
 		&i.GuildRealmID,
@@ -2774,7 +2865,7 @@ func (q *sqlQuerier) Instance(ctx context.Context, id uuid.UUID) (LogInstancesGu
 
 const instanceBySlug = `-- name: InstanceBySlug :one
 SELECT
-  id, realm_id, log_group_id, name, hashed_slug, guild_id, capabilities, versions, recorder_name, recorder_guid, duplicate_group_id, realm_name, guild_name, guild_realm_id, guild_created_at
+  id, realm_id, log_group_id, name, hashed_slug, guild_id, capabilities, versions, recorder_name, recorder_guid, duplicate_group_id, start_time, end_time, realm_name, guild_name, guild_realm_id, guild_created_at
 FROM
   log_instances_guild
 WHERE
@@ -2796,6 +2887,8 @@ func (q *sqlQuerier) InstanceBySlug(ctx context.Context, hashedSlug pgtype.Text)
 		&i.RecorderName,
 		&i.RecorderGuid,
 		&i.DuplicateGroupID,
+		&i.StartTime,
+		&i.EndTime,
 		&i.RealmName,
 		&i.GuildName,
 		&i.GuildRealmID,
@@ -2963,7 +3056,7 @@ const listInstancesByTimeRange = `-- name: ListInstancesByTimeRange :many
 SELECT 
     li.id,
     li.hashed_slug as slug,
-    li.name,
+	COALESCE(NULLIF(btrim(li.name), ''), NULLIF(btrim(sm.instance_name), ''), li.name) as name,
     li.realm_id,
     wsr.name as realm_name,
     wlg.owner as uploader_id,
@@ -2986,6 +3079,7 @@ SELECT
 FROM log_instances li
 JOIN parsed_log_group plg ON plg.id = li.log_group_id
 JOIN wow_log_groups wlg ON wlg.id = plg.id
+LEFT JOIN server_upload_meta sm ON sm.log_group_id = li.log_group_id
 JOIN users u ON u.id = wlg.owner
 JOIN wow_server_realms wsr ON wsr.id = li.realm_id
 LEFT JOIN guilds g ON g.id = li.guild_id
@@ -3002,7 +3096,7 @@ WHERE true
     -- Filter by instance names
     AND CASE
         WHEN cardinality($3 :: text[]) > 0 THEN
-            li.name = ANY($3 :: text[])
+			COALESCE(NULLIF(btrim(li.name), ''), NULLIF(btrim(sm.instance_name), ''), li.name) = ANY($3 :: text[])
         ELSE true
     END
     -- Filter by video presence
@@ -3122,7 +3216,7 @@ const listRecentInstances = `-- name: ListRecentInstances :many
 SELECT 
     li.id,
     li.hashed_slug as slug,
-    li.name,
+	COALESCE(NULLIF(btrim(li.name), ''), NULLIF(btrim(sm.instance_name), ''), li.name) as name,
     li.realm_id,
     wsr.name as realm_name,
     wlg.owner as uploader_id,
@@ -3145,6 +3239,7 @@ SELECT
 FROM log_instances li
 JOIN parsed_log_group plg ON plg.id = li.log_group_id
 JOIN wow_log_groups wlg ON wlg.id = plg.id
+LEFT JOIN server_upload_meta sm ON sm.log_group_id = li.log_group_id
 JOIN users u ON u.id = wlg.owner
 JOIN wow_server_realms wsr ON wsr.id = li.realm_id
 LEFT JOIN guilds g ON g.id = li.guild_id
@@ -3152,7 +3247,7 @@ WHERE true
     -- Filter by instance names
     AND CASE
         WHEN cardinality($1 :: text[]) > 0 THEN
-            li.name = ANY($1 :: text[])
+			COALESCE(NULLIF(btrim(li.name), ''), NULLIF(btrim(sm.instance_name), ''), li.name) = ANY($1 :: text[])
         ELSE true
     END
     -- Filter by video presence
@@ -3271,7 +3366,7 @@ SELECT DISTINCT ON (
     )
     li.id,
     li.hashed_slug as slug,
-    li.name,
+	COALESCE(NULLIF(btrim(li.name), ''), NULLIF(btrim(sm.instance_name), ''), li.name) as name,
     li.realm_id,
     wsr.name as realm_name,
     wlg.owner as uploader_id,
@@ -3295,6 +3390,7 @@ FROM log_instances li
 JOIN log_instance_players lip ON lip.instance_id = li.id
 JOIN parsed_log_group plg ON plg.id = li.log_group_id
 JOIN wow_log_groups wlg ON wlg.id = plg.id
+LEFT JOIN server_upload_meta sm ON sm.log_group_id = li.log_group_id
 JOIN users u ON u.id = wlg.owner
 JOIN wow_server_realms wsr ON wsr.id = li.realm_id
 LEFT JOIN guilds g ON g.id = li.guild_id
@@ -3302,7 +3398,7 @@ WHERE lip.name ILIKE $1
     -- Filter by instance names
     AND CASE
         WHEN cardinality($2 :: text[]) > 0 THEN
-            li.name = ANY($2 :: text[])
+			COALESCE(NULLIF(btrim(li.name), ''), NULLIF(btrim(sm.instance_name), ''), li.name) = ANY($2 :: text[])
         ELSE true
     END
     -- Filter by video presence
@@ -6924,106 +7020,6 @@ func (q *sqlQuerier) GetSpellItemEnchantmentByID(ctx context.Context, id int32) 
 	return i, err
 }
 
-const listWorldBossCredits = `-- name: ListWorldBossCredits :many
-SELECT entry, credit_type, credit_entry, last_encounter_dungeon, comment
-FROM world_boss_credit
-ORDER BY entry
-`
-
-func (q *sqlQuerier) ListWorldBossCredits(ctx context.Context) ([]WorldBossCredit, error) {
-	rows, err := q.db.Query(ctx, listWorldBossCredits)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []WorldBossCredit
-	for rows.Next() {
-		var i WorldBossCredit
-		if err := rows.Scan(
-			&i.Entry,
-			&i.CreditType,
-			&i.CreditEntry,
-			&i.LastEncounterDungeon,
-			&i.Comment,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listWorldInstanceScripts = `-- name: ListWorldInstanceScripts :many
-SELECT map, parent, script
-FROM world_instance_script
-ORDER BY map
-`
-
-func (q *sqlQuerier) ListWorldInstanceScripts(ctx context.Context) ([]WorldInstanceScript, error) {
-	rows, err := q.db.Query(ctx, listWorldInstanceScripts)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []WorldInstanceScript
-	for rows.Next() {
-		var i WorldInstanceScript
-		if err := rows.Scan(&i.Map, &i.Parent, &i.Script); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
-const listWorldInstanceSpawnEntries = `-- name: ListWorldInstanceSpawnEntries :many
-WITH entries AS (
-  SELECT map, id AS entry_id FROM world_creature_spawn WHERE id <> 0
-  UNION
-  SELECT map, id2 AS entry_id FROM world_creature_spawn WHERE id2 <> 0
-  UNION
-  SELECT map, id3 AS entry_id FROM world_creature_spawn WHERE id3 <> 0
-  UNION
-  SELECT map, id4 AS entry_id FROM world_creature_spawn WHERE id4 <> 0
-)
-SELECT e.map, e.entry_id, COALESCE(wct.name, 'Unknown') AS name
-FROM entries e
-LEFT JOIN world_creature_template wct ON wct.entry = e.entry_id
-ORDER BY e.map, e.entry_id
-`
-
-type ListWorldInstanceSpawnEntriesRow struct {
-	Map     int32  `db:"map" json:"map"`
-	EntryID int32  `db:"entry_id" json:"entry_id"`
-	Name    string `db:"name" json:"name"`
-}
-
-func (q *sqlQuerier) ListWorldInstanceSpawnEntries(ctx context.Context) ([]ListWorldInstanceSpawnEntriesRow, error) {
-	rows, err := q.db.Query(ctx, listWorldInstanceSpawnEntries)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ListWorldInstanceSpawnEntriesRow
-	for rows.Next() {
-		var i ListWorldInstanceSpawnEntriesRow
-		if err := rows.Scan(&i.Map, &i.EntryID, &i.Name); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const deleteWorldInstanceTemplate = `-- name: DeleteWorldInstanceTemplate :exec
 DELETE FROM world_instance_template WHERE id = $1
 `
@@ -7058,21 +7054,9 @@ JOIN world_instance_zone_names wizn ON wit.id = wizn.instance_id
 WHERE wizn.zone_name = $1
 `
 
-type GetWorldInstanceTemplateByZoneNameRow struct {
-	ID           uuid.UUID          `db:"id" json:"id"`
-	Name         string             `db:"name" json:"name"`
-	Abbreviation pgtype.Text        `db:"abbreviation" json:"abbreviation"`
-	Category     InstanceCategory   `db:"category" json:"category"`
-	BossCount    pgtype.Int4        `db:"boss_count" json:"boss_count"`
-	Background   pgtype.Text        `db:"background" json:"background"`
-	MapID        pgtype.Int4        `db:"map_id" json:"map_id"`
-	CreatedAt    pgtype.Timestamptz `db:"created_at" json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
-}
-
-func (q *sqlQuerier) GetWorldInstanceTemplateByZoneName(ctx context.Context, zoneName string) (GetWorldInstanceTemplateByZoneNameRow, error) {
+func (q *sqlQuerier) GetWorldInstanceTemplateByZoneName(ctx context.Context, zoneName string) (WorldInstanceTemplate, error) {
 	row := q.db.QueryRow(ctx, getWorldInstanceTemplateByZoneName, zoneName)
-	var i GetWorldInstanceTemplateByZoneNameRow
+	var i WorldInstanceTemplate
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
@@ -7175,33 +7159,115 @@ func (q *sqlQuerier) InsertWorldInstanceZoneName(ctx context.Context, arg Insert
 	return err
 }
 
+const listWorldBossCredits = `-- name: ListWorldBossCredits :many
+SELECT entry, credit_type, credit_entry, last_encounter_dungeon, comment
+FROM world_boss_credit
+ORDER BY entry
+`
+
+func (q *sqlQuerier) ListWorldBossCredits(ctx context.Context) ([]WorldBossCredit, error) {
+	rows, err := q.db.Query(ctx, listWorldBossCredits)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []WorldBossCredit
+	for rows.Next() {
+		var i WorldBossCredit
+		if err := rows.Scan(&i.Entry, &i.CreditType, &i.CreditEntry, &i.LastEncounterDungeon, &i.Comment); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listWorldInstanceScripts = `-- name: ListWorldInstanceScripts :many
+SELECT map, parent, script
+FROM world_instance_script
+ORDER BY map
+`
+
+func (q *sqlQuerier) ListWorldInstanceScripts(ctx context.Context) ([]WorldInstanceScript, error) {
+	rows, err := q.db.Query(ctx, listWorldInstanceScripts)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []WorldInstanceScript
+	for rows.Next() {
+		var i WorldInstanceScript
+		if err := rows.Scan(&i.Map, &i.Parent, &i.Script); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listWorldInstanceSpawnEntries = `-- name: ListWorldInstanceSpawnEntries :many
+WITH entries AS (
+  SELECT map, id AS entry_id FROM world_creature_spawn WHERE id <> 0
+  UNION
+  SELECT map, id2 AS entry_id FROM world_creature_spawn WHERE id2 <> 0
+  UNION
+  SELECT map, id3 AS entry_id FROM world_creature_spawn WHERE id3 <> 0
+  UNION
+  SELECT map, id4 AS entry_id FROM world_creature_spawn WHERE id4 <> 0
+)
+SELECT e.map, e.entry_id, COALESCE(wct.name, 'Unknown') AS name
+FROM entries e
+LEFT JOIN world_creature_template wct ON wct.entry = e.entry_id
+ORDER BY e.map, e.entry_id
+`
+
+type ListWorldInstanceSpawnEntriesRow struct {
+	Map     int32  `db:"map" json:"map"`
+	EntryID int32  `db:"entry_id" json:"entry_id"`
+	Name    string `db:"name" json:"name"`
+}
+
+func (q *sqlQuerier) ListWorldInstanceSpawnEntries(ctx context.Context) ([]ListWorldInstanceSpawnEntriesRow, error) {
+	rows, err := q.db.Query(ctx, listWorldInstanceSpawnEntries)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListWorldInstanceSpawnEntriesRow
+	for rows.Next() {
+		var i ListWorldInstanceSpawnEntriesRow
+		if err := rows.Scan(&i.Map, &i.EntryID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listWorldInstanceTemplates = `-- name: ListWorldInstanceTemplates :many
 SELECT id, name, abbreviation, category, boss_count, background, map_id, created_at, updated_at
 FROM world_instance_template
 ORDER BY name
 `
 
-type ListWorldInstanceTemplatesRow struct {
-	ID           uuid.UUID          `db:"id" json:"id"`
-	Name         string             `db:"name" json:"name"`
-	Abbreviation pgtype.Text        `db:"abbreviation" json:"abbreviation"`
-	Category     InstanceCategory   `db:"category" json:"category"`
-	BossCount    pgtype.Int4        `db:"boss_count" json:"boss_count"`
-	Background   pgtype.Text        `db:"background" json:"background"`
-	MapID        pgtype.Int4        `db:"map_id" json:"map_id"`
-	CreatedAt    pgtype.Timestamptz `db:"created_at" json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
-}
-
-func (q *sqlQuerier) ListWorldInstanceTemplates(ctx context.Context) ([]ListWorldInstanceTemplatesRow, error) {
+func (q *sqlQuerier) ListWorldInstanceTemplates(ctx context.Context) ([]WorldInstanceTemplate, error) {
 	rows, err := q.db.Query(ctx, listWorldInstanceTemplates)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListWorldInstanceTemplatesRow
+	var items []WorldInstanceTemplate
 	for rows.Next() {
-		var i ListWorldInstanceTemplatesRow
+		var i WorldInstanceTemplate
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
@@ -7299,10 +7365,10 @@ ON CONFLICT (name) DO UPDATE SET
   abbreviation = EXCLUDED.abbreviation,
   category = EXCLUDED.category,
   boss_count = EXCLUDED.boss_count,
-  map_id = EXCLUDED.map_id,
+	map_id = EXCLUDED.map_id,
   background = EXCLUDED.background,
   updated_at = NOW()
-RETURNING id, name, abbreviation, category, boss_count, background, created_at, updated_at, map_id
+RETURNING id, name, abbreviation, category, boss_count, background, map_id, created_at, updated_at
 `
 
 type UpsertWorldInstanceTemplateParams struct {
@@ -7331,9 +7397,9 @@ func (q *sqlQuerier) UpsertWorldInstanceTemplate(ctx context.Context, arg Upsert
 		&i.Category,
 		&i.BossCount,
 		&i.Background,
+		&i.MapID,
 		&i.CreatedAt,
 		&i.UpdatedAt,
-		&i.MapID,
 	)
 	return i, err
 }

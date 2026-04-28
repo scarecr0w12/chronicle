@@ -17,7 +17,7 @@ import (
 )
 
 func worldInstanceFactory(
-	tmpl database.ListWorldInstanceTemplatesRow,
+	tmpl database.WorldInstanceTemplate,
 	zoneNames []database.WorldInstanceZoneName,
 	units []database.ListWorldInstanceUnitsRow,
 ) *instances.CommonFactory {

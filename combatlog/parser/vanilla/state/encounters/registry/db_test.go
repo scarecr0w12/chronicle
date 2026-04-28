@@ -13,7 +13,7 @@ func TestWorldInstanceFactoryUsesMapIDFallback(t *testing.T) {
 	t.Parallel()
 
 	factory := worldInstanceFactory(
-		database.ListWorldInstanceTemplatesRow{
+		database.WorldInstanceTemplate{
 			Name:  "Shadowfang Keep",
 			MapID: pgtype.Int4{Int32: 33, Valid: true},
 		},
@@ -37,7 +37,7 @@ func TestWorldInstanceFactoryFallsBackToZoneDisplayName(t *testing.T) {
 	t.Parallel()
 
 	factory := worldInstanceFactory(
-		database.ListWorldInstanceTemplatesRow{
+		database.WorldInstanceTemplate{
 			Name:  "   ",
 			MapID: pgtype.Int4{Int32: 33, Valid: true},
 		},
