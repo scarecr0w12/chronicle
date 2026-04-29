@@ -30,13 +30,13 @@ Status meanings:
 | 36 | `instance_deadmines` | Deadmines | supported | Registered with hostile coverage. |
 | 43 | `instance_wailing_caverns` | Wailing Caverns | supported | Registered with hostile coverage. |
 | 47 | `instance_razorfen_kraul` | Razorfen Kraul | supported | Registered with hostile coverage. |
-| 48 | `instance_blackfathom_deeps` | Blackfathom Deeps | missing | No Warmane registry entry. |
+| 48 | `instance_blackfathom_deeps` | Blackfathom Deeps | supported | Registered with boss and hostile coverage sourced from live AzerothCore creature spawns. |
 | 70 | `instance_uldaman` | Uldaman | missing | No Warmane registry entry. |
 | 90 | `instance_gnomeregan` | Gnomeregan | missing | No Warmane registry entry. |
 | 109 | `instance_sunken_temple` | Sunken Temple | partial | Registered, comment says `not yet complete`. |
 | 129 | `instance_razorfen_downs` | Razorfen Downs | missing | No Warmane registry entry. |
 | 189 | `instance_scarlet_monastery` | Scarlet Monastery | partial | Registry only includes Library and Cathedral slices. |
-| 209 | `instance_zulfarrak` | Zul'Farrak | missing | No Warmane registry entry. |
+| 209 | `instance_zulfarrak` | Zul'Farrak | supported | Registered with hostile coverage and AzerothCore parser regression coverage. |
 | 229 | `instance_blackrock_spire` | Blackrock Spire | partial | Comment says only upper spire is supported. |
 | 230 | `instance_blackrock_depths` | Blackrock Depths | partial | Registered, but comment says most bosses and mobs are not yet supported. |
 | 249 | `instance_onyxias_lair` | Onyxia's Lair | supported | Registered with hostile coverage. |

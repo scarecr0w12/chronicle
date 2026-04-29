@@ -46,6 +46,25 @@ func TestZoneDetector_EmitsZoneOnNexusCreature(t *testing.T) {
 	assert.Equal(t, "the nexus", zd.LastZone())
 }
 
+func TestZoneDetector_EmitsZoneOnBlackfathomBoss(t *testing.T) {
+	t.Parallel()
+
+	reg := registry.WarmaneStaticRegistry(slog.Default())
+	zd := zonedetector.New(reg)
+
+	ts := time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC)
+	msg := unitMsg(ts, creatureGUID(4829)) // Aku'mai
+
+	result := zd.ProcessMessages([]messages.Message{msg})
+	require.Greater(t, len(result), 1, "should prepend a synthetic zone message")
+
+	zoneMsg, ok := result[0].(*messages.Zone)
+	require.True(t, ok, "first message should be *messages.Zone")
+	assert.Equal(t, "blackfathom deeps", zoneMsg.Name)
+	assert.True(t, zoneMsg.IsInstance)
+	assert.Equal(t, "blackfathom deeps", zd.LastZone())
+}
+
 func TestZoneDetector_NoDuplicateZone(t *testing.T) {
 	t.Parallel()
 

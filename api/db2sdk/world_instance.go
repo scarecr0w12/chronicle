@@ -14,6 +14,10 @@ func WorldInstanceTemplate(wit database.WorldInstanceTemplate, zoneNames []datab
 	if wit.Abbreviation.Valid {
 		t.Abbreviation = wit.Abbreviation.String
 	}
+	if wit.MapID.Valid {
+		v := wit.MapID.Int32
+		t.MapID = &v
+	}
 	if wit.BossCount.Valid {
 		v := wit.BossCount.Int32
 		t.BossCount = &v

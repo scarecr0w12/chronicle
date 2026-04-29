@@ -478,6 +478,18 @@ export interface IdentitySpell {
 }
 
 // From chroniclesdk/world_instance.go
+export interface ImportWorldInstanceDumpRequest {
+    readonly instances: readonly WorldInstanceDumpEntry[];
+}
+
+// From chroniclesdk/world_instance.go
+export interface ImportWorldInstanceDumpResponse {
+    readonly instances_imported: number;
+    readonly zone_names_imported: number;
+    readonly units_imported: number;
+}
+
+// From chroniclesdk/world_instance.go
 export type InstanceCategory = "dungeon" | "pvp" | "raid";
 
 export const InstanceCategorys: InstanceCategory[] = ["dungeon", "pvp", "raid"];
@@ -1415,6 +1427,7 @@ export interface UpsertWorldInstanceTemplateRequest {
     readonly name: string;
     readonly abbreviation?: string;
     readonly category: InstanceCategory;
+    readonly map_id?: number;
     readonly boss_count?: number;
     readonly background?: string;
     readonly zone_names: readonly WorldInstanceZoneName[];
@@ -1737,11 +1750,24 @@ export type WoWUnitType = 2 | 3 | 1 | 0 | 4;
 export const WoWUnitTypes: WoWUnitType[] = [2, 3, 1, 0, 4];
 
 // From chroniclesdk/world_instance.go
+export interface WorldInstanceDumpEntry {
+    readonly name: string;
+    readonly abbreviation?: string;
+    readonly category: InstanceCategory;
+    readonly map_id?: number;
+    readonly boss_count?: number;
+    readonly background?: string;
+    readonly zone_names: readonly WorldInstanceZoneName[];
+    readonly units: readonly WorldInstanceUnit[];
+}
+
+// From chroniclesdk/world_instance.go
 export interface WorldInstanceTemplate {
     readonly id: string;
     readonly name: string;
     readonly abbreviation?: string;
     readonly category: InstanceCategory;
+    readonly map_id?: number;
     readonly boss_count?: number;
     readonly background?: string;
     readonly zone_names: readonly WorldInstanceZoneName[];

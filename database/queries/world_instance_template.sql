@@ -8,13 +8,14 @@ JOIN world_instance_zone_names wizn ON wit.id = wizn.instance_id
 WHERE wizn.zone_name = $1;
 
 -- name: UpsertWorldInstanceTemplate :one
-INSERT INTO world_instance_template (name, abbreviation, category, boss_count, background)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO world_instance_template (name, abbreviation, category, boss_count, background, map_id)
+VALUES ($1, $2, $3, $4, $5, $6)
 ON CONFLICT (name) DO UPDATE SET
   abbreviation = EXCLUDED.abbreviation,
   category = EXCLUDED.category,
   boss_count = EXCLUDED.boss_count,
   background = EXCLUDED.background,
+  map_id = EXCLUDED.map_id,
   updated_at = NOW()
 RETURNING *;
 

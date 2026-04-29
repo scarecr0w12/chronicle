@@ -865,7 +865,8 @@ CREATE TABLE world_instance_template (
     boss_count integer,
     background text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
-    updated_at timestamp with time zone DEFAULT now() NOT NULL
+    updated_at timestamp with time zone DEFAULT now() NOT NULL,
+    map_id integer
 );
 
 CREATE TABLE world_instance_units (
@@ -1392,6 +1393,8 @@ CREATE INDEX idx_user_panel_layouts_code ON user_panel_layouts USING btree (code
 CREATE INDEX idx_world_creature_spawn_id ON world_creature_spawn USING btree (id);
 
 CREATE INDEX idx_world_creature_template_name ON world_creature_template USING btree (name);
+
+CREATE INDEX idx_world_instance_template_map_id ON world_instance_template USING btree (map_id) WHERE (map_id IS NOT NULL);
 
 CREATE INDEX idx_world_instance_zone_name ON world_instance_zone_names USING btree (zone_name) INCLUDE (instance_id);
 

@@ -38,6 +38,13 @@ var (
 		Hostiles:  FromMap(RazorfenKraulHostiles()),
 	}
 
+	BlackfathomDeepsFactory = &CommonFactory{
+		Name:      "Blackfathom Deeps",
+		ZoneNames: []string{"blackfathom deeps", "blackfathom depths", "黑暗深渊"},
+		MapIDs:    []uint32{48},
+		Hostiles:  FromMap(BlackfathomDeepsHostiles()),
+	}
+
 	ScarletMonasteryCathedralFactory = &CommonFactory{
 		Name:      "Scarlet Monastery Cathedral",
 		ZoneNames: []string{"scarlet monastery cathedral", "血色修道院-大教堂"},

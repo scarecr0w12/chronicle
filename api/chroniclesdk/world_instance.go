@@ -41,6 +41,7 @@ type WorldInstanceTemplate struct {
 	Name         string                  `json:"name"`
 	Abbreviation string                  `json:"abbreviation,omitempty"`
 	Category     InstanceCategory        `json:"category"`
+	MapID        *int32                  `json:"map_id,omitempty"`
 	BossCount    *int32                  `json:"boss_count,omitempty"`
 	Background   string                  `json:"background,omitempty"`
 	ZoneNames    []WorldInstanceZoneName `json:"zone_names"`
@@ -65,6 +66,7 @@ type UpsertWorldInstanceTemplateRequest struct {
 	Name         string                  `json:"name"`
 	Abbreviation string                  `json:"abbreviation,omitempty"`
 	Category     InstanceCategory        `json:"category"`
+	MapID        *int32                  `json:"map_id,omitempty"`
 	BossCount    *int32                  `json:"boss_count,omitempty"`
 	Background   string                  `json:"background,omitempty"`
 	ZoneNames    []WorldInstanceZoneName `json:"zone_names"`
@@ -73,4 +75,25 @@ type UpsertWorldInstanceTemplateRequest struct {
 // BulkUpsertWorldInstanceUnitsRequest is the request body for bulk upserting units.
 type BulkUpsertWorldInstanceUnitsRequest struct {
 	Units []WorldInstanceUnit `json:"units"`
+}
+
+type WorldInstanceDumpEntry struct {
+	Name         string                  `json:"name"`
+	Abbreviation string                  `json:"abbreviation,omitempty"`
+	Category     InstanceCategory        `json:"category"`
+	MapID        *int32                  `json:"map_id,omitempty"`
+	BossCount    *int32                  `json:"boss_count,omitempty"`
+	Background   string                  `json:"background,omitempty"`
+	ZoneNames    []WorldInstanceZoneName `json:"zone_names"`
+	Units        []WorldInstanceUnit     `json:"units"`
+}
+
+type ImportWorldInstanceDumpRequest struct {
+	Instances []WorldInstanceDumpEntry `json:"instances"`
+}
+
+type ImportWorldInstanceDumpResponse struct {
+	InstancesImported int `json:"instances_imported"`
+	ZoneNamesImported int `json:"zone_names_imported"`
+	UnitsImported     int `json:"units_imported"`
 }

@@ -16,6 +16,7 @@ func WarmaneStaticRegistry(logger *slog.Logger) *Registry {
 	r.RegisterEntry(FromCommonFactory(instances.ForgeOfSoulsFactory))
 	r.RegisterEntry(FromCommonFactory(instances.HallsOfReflectionFactory))
 	r.RegisterEntry(FromCommonFactory(classic.DeadminesFactory))
+	r.RegisterEntry(FromCommonFactory(classic.BlackfathomDeepsFactory))
 	r.RegisterEntry(FromCommonFactory(classic.ShadowfangKeepFactory).WithComment("Boss-first coverage from world creature templates; trash is not yet exhaustive"))
 	r.RegisterEntry(FromCommonFactory(classic.WailingCavernsFactory))
 	r.RegisterEntry(FromCommonFactory(classic.RazorfenKraulFactory))

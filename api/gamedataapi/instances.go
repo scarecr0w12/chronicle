@@ -72,6 +72,10 @@ func (h *Handler) UpsertInstance(w http.ResponseWriter, r *http.Request) {
 		if req.BossCount != nil {
 			bossCount = pgtype.Int4{Int32: *req.BossCount, Valid: true}
 		}
+		mapID := pgtype.Int4{}
+		if req.MapID != nil {
+			mapID = pgtype.Int4{Int32: *req.MapID, Valid: true}
+		}
 		background := pgtype.Text{}
 		if req.Background != "" {
 			background = pgtype.Text{String: req.Background, Valid: true}
@@ -82,6 +86,7 @@ func (h *Handler) UpsertInstance(w http.ResponseWriter, r *http.Request) {
 			Name:         req.Name,
 			Abbreviation: abbrev,
 			Category:     database.InstanceCategory(req.Category),
+			MapID:        mapID,
 			BossCount:    bossCount,
 			Background:   background,
 		})

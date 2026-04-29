@@ -56,6 +56,7 @@ func (h *Handler) Routes() http.Handler {
 	// Instance template CRUD
 	r.Get("/instances", h.ListInstances)
 	r.Post("/instances", h.UpsertInstance)
+	r.Post("/instances/import", h.ImportInstanceDump)
 	r.Delete("/instances/{instanceID}", h.DeleteInstance)
 	r.Get("/instances/{instanceID}/units", h.ListInstanceUnits)
 	r.Post("/instances/{instanceID}/units", h.BulkUpsertInstanceUnits)

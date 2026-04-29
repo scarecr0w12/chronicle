@@ -523,6 +523,43 @@ func RazorfenKraulHostiles() map[uint32]Identity {
 	return hostile
 }
 
+func BlackfathomDeepsHostiles() map[uint32]Identity {
+	hostile := make(map[uint32]Identity)
+	LoadAdds(hostile, map[uint32]string{
+		4798: "Fallenroot Shadowstalker",
+		4799: "Fallenroot Hellcaller",
+		4805: "Blackfathom Sea Witch",
+		4807: "Blackfathom Myrmidon",
+		4809: "Twilight Acolyte",
+		4810: "Twilight Reaver",
+		4811: "Twilight Aquamancer",
+		4812: "Twilight Loreseeker",
+		4813: "Twilight Shadowmage",
+		4814: "Twilight Elementalist",
+		4815: "Murkshallow Snapclaw",
+		4818: "Blindlight Murloc",
+		4819: "Blindlight Muckdweller",
+		4820: "Blindlight Oracle",
+		4821: "Skittering Crustacean",
+		4822: "Snapping Crustacean",
+		4823: "Barbed Crustacean",
+		4824: "Aku'mai Fisher",
+		4825: "Aku'mai Snapjaw",
+		4827: "Deep Pool Threshfin",
+	})
+	LoadBosses(hostile, map[uint32]string{
+		4829:  "Aku'mai",
+		4830:  "Old Serra'kis",
+		4831:  "Lady Sarevess",
+		4832:  "Twilight Lord Kelris",
+		4887:  "Ghamoo-ra",
+		6243:  "Gelihast",
+		12902: "Lorgus Jett",
+	})
+
+	return hostile
+}
+
 func WailingCavernsHostiles() map[uint32]Identity {
 	hostile := make(map[uint32]Identity)
 	LoadAdds(hostile, map[uint32]string{

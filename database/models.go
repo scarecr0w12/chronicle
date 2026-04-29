@@ -1393,6 +1393,7 @@ type WorldInstanceTemplate struct {
 	Background   pgtype.Text        `db:"background" json:"background"`
 	CreatedAt    pgtype.Timestamptz `db:"created_at" json:"created_at"`
 	UpdatedAt    pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
+	MapID        pgtype.Int4        `db:"map_id" json:"map_id"`
 }
 
 type WorldInstanceUnit struct {
