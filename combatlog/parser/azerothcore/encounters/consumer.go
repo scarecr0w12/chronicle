@@ -60,7 +60,7 @@ func (a AzerothCoreInstanceHook) ProcessMessage(active bool, encounterID uuid.UU
 		a.ID.AddEntryId(entry, instances.Identity{
 			Affiliation:     msg.Affiliation,
 			Name:            msg.Name,
-			EncounterName:   msg.Name,
+			EncounterName:   "",
 			Boss:            msg.Boss,
 			EncounterNameFn: nil,
 		})
