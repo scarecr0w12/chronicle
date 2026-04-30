@@ -259,8 +259,8 @@ func (p *Parser) parseUnitCombat(ts time.Time, m *wotlk.Matched, _ string) ([]me
 			MessageBase: messages.Base(ts),
 			UnitGUID:    unitGUID,
 			UnitName:    unitName,
-			VictimGUID:  victimGUID,
-			VictimName:  victimName,
+			OtherGUID:   victimGUID,
+			OtherName:   victimName,
 		},
 	}, nil
 }
@@ -289,6 +289,8 @@ func (p *Parser) parseUnitInfo(ts time.Time, m *wotlk.Matched, _ string) ([]mess
 		aff = types.AffiliationHostile
 	case "friendly":
 		aff = types.AffiliationFriendly
+	case "neutral":
+		aff = types.AffiliationNeutral
 	}
 
 	info := unitinfo.Info{

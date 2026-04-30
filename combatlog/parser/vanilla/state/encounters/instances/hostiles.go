@@ -1,16 +1,19 @@
 package instances
 
-import "github.com/Emyrk/chronicle/internal/services"
+import (
+	"github.com/Emyrk/chronicle/combatlog/parser/types"
+	"github.com/Emyrk/chronicle/internal/services"
+)
 
 func LoadAdds(src map[uint32]Identity, adds map[uint32]string) {
 	for k, name := range adds {
-		src[k] = Identity{Hostile: true, Name: name}
+		src[k] = Identity{Affiliation: types.AffiliationHostile, Name: name}
 	}
 }
 
 func LoadBosses(src map[uint32]Identity, bosses map[uint32]string) {
 	for k, name := range bosses {
-		src[k] = Identity{Hostile: true, Name: name, EncounterName: name, Boss: true}
+		src[k] = Identity{Affiliation: types.AffiliationHostile, Name: name, EncounterName: name, Boss: true}
 	}
 }
 
@@ -696,8 +699,8 @@ func EmeraldSanctumHostiles() map[uint32]Identity {
 		}
 		return nil
 	}
-	hostile[60747] = Identity{Hostile: true, EncounterName: "Erennius", Boss: true, EncounterNameFn: hardMode}
-	hostile[60748] = Identity{Hostile: true, EncounterName: "Solnius", Boss: true, EncounterNameFn: hardMode}
+	hostile[60747] = Identity{Affiliation: types.AffiliationHostile, EncounterName: "Erennius", Boss: true, EncounterNameFn: hardMode}
+	hostile[60748] = Identity{Affiliation: types.AffiliationHostile, EncounterName: "Solnius", Boss: true, EncounterNameFn: hardMode}
 
 	return hostile
 }
@@ -1367,14 +1370,14 @@ func ZulFarrakHostiles() map[uint32]Identity {
 
 	// Known event helpers and triggers in the dungeon should not be reported as
 	// unknown units, but they also should not drive encounter classification.
-	hostile[7604] = Identity{Hostile: false}
-	hostile[7605] = Identity{Hostile: false}
-	hostile[7606] = Identity{Hostile: false}
-	hostile[7607] = Identity{Hostile: false}
-	hostile[7608] = Identity{Hostile: false}
-	hostile[10081] = Identity{Hostile: false}
-	hostile[12999] = Identity{Hostile: false}
-	hostile[141612] = Identity{Hostile: false}
+	hostile[7604] = Identity{Affiliation: types.AffiliationHostile}
+	hostile[7605] = Identity{Affiliation: types.AffiliationHostile}
+	hostile[7606] = Identity{Affiliation: types.AffiliationHostile}
+	hostile[7607] = Identity{Affiliation: types.AffiliationHostile}
+	hostile[7608] = Identity{Affiliation: types.AffiliationHostile}
+	hostile[10081] = Identity{Affiliation: types.AffiliationHostile}
+	hostile[12999] = Identity{Affiliation: types.AffiliationHostile}
+	hostile[141612] = Identity{Affiliation: types.AffiliationHostile}
 
 	return hostile
 }

@@ -4,7 +4,6 @@ import (
 	"context"
 	"log/slog"
 
-	"github.com/Emyrk/chronicle/combatlog/parser/types"
 	"github.com/Emyrk/chronicle/combatlog/parser/types/zone"
 	"github.com/Emyrk/chronicle/combatlog/parser/vanilla/messages"
 	"github.com/Emyrk/chronicle/combatlog/parser/vanilla/state/encounters"
@@ -59,7 +58,7 @@ func (a AzerothCoreInstanceHook) ProcessMessage(active bool, encounterID uuid.UU
 		}
 
 		a.ID.AddEntryId(entry, instances.Identity{
-			Hostile:         msg.Affiliation == types.AffiliationHostile,
+			Affiliation:     msg.Affiliation,
 			Name:            msg.Name,
 			EncounterName:   msg.Name,
 			Boss:            msg.Boss,

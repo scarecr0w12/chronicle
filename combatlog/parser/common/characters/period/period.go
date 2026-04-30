@@ -70,6 +70,22 @@ type Period struct {
 	EndState   EndState `json:"end_state,omitempty"`
 }
 
+func (p Period) Compare(other Period) int {
+	if p.Start == nil && other.Start == nil {
+		return 0
+	}
+
+	if p.Start == nil && other.Start != nil {
+		return -1
+	}
+
+	if p.Start != nil && other.Start == nil {
+		return 1
+	}
+
+	return p.Start.Timestamp.Date().Compare(other.Start.Timestamp.Date())
+}
+
 func (p Period) IsActive() bool {
 	return p.Start != nil && p.End == nil
 }

@@ -207,6 +207,7 @@ func TestParserMessages(t *testing.T) {
 					Name:         "Priests",
 					CanCooperate: true,
 					Owner:        nil,
+					MaxHealth:    3117,
 					Buffs:        []unitinfo.Buff{},
 					Level:        60,
 					Challenges:   []string{},

@@ -670,13 +670,13 @@ func (*UnitEvade) isMessage()            {}
 // UnitCombatEnter is emitted when a unit enters combat with another unit.
 type UnitCombatEnter struct {
 	MessageBase
-	UnitGUID   guid.GUID
-	UnitName   string
-	VictimGUID guid.GUID
-	VictimName string
+	UnitGUID  guid.GUID
+	UnitName  string
+	OtherGUID guid.GUID
+	OtherName string
 }
 
-func (u UnitCombatEnter) Affects() []guid.GUID { return []guid.GUID{u.UnitGUID, u.VictimGUID} }
+func (u UnitCombatEnter) Affects() []guid.GUID { return []guid.GUID{u.UnitGUID, u.OtherGUID} }
 func (*UnitCombatEnter) isMessage()            {}
 
 // EncounterCredit is emitted when the server grants encounter credit for a boss kill.

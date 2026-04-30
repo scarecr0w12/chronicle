@@ -2,6 +2,7 @@ package instances
 
 import (
 	"github.com/Emyrk/chronicle/combatlog/parser/guid"
+	"github.com/Emyrk/chronicle/combatlog/parser/types"
 )
 
 type EncounterFuncResult struct {
@@ -14,7 +15,7 @@ type EncounterFuncResult struct {
 }
 
 type Identity struct {
-	Hostile bool
+	Affiliation types.Affiliation
 	// Name is the display name for this unit (e.g. "Lava Surger", "Ragnaros").
 	Name string
 	// EncounterName, if set, will be used to identify a named encounter.
@@ -23,6 +24,10 @@ type Identity struct {
 	Boss bool
 
 	EncounterNameFn func(f Fight) *EncounterFuncResult
+}
+
+func (id Identity) CanBattle() bool {
+	return id.Affiliation == types.AffiliationHostile || id.Affiliation == types.AffiliationNeutral
 }
 
 type Identifier struct {
@@ -43,18 +48,18 @@ func (i *Identifier) AddEntryId(entryId uint32, identity Identity) {
 
 func (i *Identifier) IdentifyUnit(id guid.GUID) Identity {
 	if id.IsPlayer() {
-		return Identity{Hostile: false}
+		return Identity{Affiliation: types.AffiliationUnknown}
 	}
 
 	entryID, ok := id.GetEntry()
 	if !ok {
-		return Identity{Hostile: false}
+		return Identity{Affiliation: types.AffiliationUnknown}
 	}
 
 	identity, exists := i.byEntryId[entryID]
 	if !exists {
 		i.unknownUnits[entryID]++
-		return Identity{Hostile: false}
+		return Identity{Affiliation: types.AffiliationUnknown}
 	}
 	return identity
 }

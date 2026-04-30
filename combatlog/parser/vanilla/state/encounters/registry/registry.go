@@ -178,6 +178,7 @@ func (r *Registry) AllInstancesWithComments() map[string]string {
 	}
 	return all
 }
+
 // InstanceDetailUnit is a hostile creature entry ID + display name.
 type InstanceDetailUnit struct {
 	EntryID uint32
@@ -209,7 +210,7 @@ func (r *Registry) AllInstanceDetails() []InstanceDetail {
 
 			var bosses, trash []InstanceDetailUnit
 			for entryID, id := range entry.HostileEntries {
-				if !id.Hostile {
+				if !id.CanBattle() {
 					continue
 				}
 				u := InstanceDetailUnit{EntryID: entryID, Name: id.Name}

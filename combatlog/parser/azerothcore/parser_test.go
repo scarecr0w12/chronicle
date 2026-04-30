@@ -35,7 +35,7 @@ func (stubSpellDB) Spell(chrondbc.SpellID) (*chrondbc.Spell, error) {
 
 func newTestParser(t *testing.T, logData string) *Parser {
 	t.Helper()
-	p, err := New(context.Background(), slog.Default(), strings.NewReader(logData), stubSpellDB{}, nil, registry.NewRegistry(slog.Default()))
+	p, err := New(context.Background(), slog.Default(), strings.NewReader(logData), stubSpellDB{}, nil)
 	require.NoError(t, err)
 	return p
 }

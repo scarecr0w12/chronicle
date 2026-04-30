@@ -28,7 +28,7 @@ func (c *LogBased) Process(m messages.Message) error {
 
 	switch msg := m.(type) {
 	case *messages.UnitCombatEnter:
-		if msg.VictimGUID == c.ID() {
+		if msg.UnitGUID == c.ID() {
 			c.Start("combat enter", m)
 		}
 	case *messages.UnitEvade:

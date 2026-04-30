@@ -5,6 +5,7 @@ import (
 	"log/slog"
 	"sync"
 
+	"github.com/Emyrk/chronicle/api/db2sdk"
 	"github.com/Emyrk/chronicle/combatlog/parser/vanilla/state/encounters/instances"
 	"github.com/Emyrk/chronicle/database"
 	"github.com/Emyrk/chronicle/database/authz"
@@ -126,7 +127,7 @@ func (dr *DBRegistry) reload(ctx context.Context) error {
 		hostiles := make(map[uint32]instances.Identity)
 		for _, u := range units {
 			id := instances.Identity{
-				Hostile: u.Affiliation == database.UnitAffiliationHostile,
+				Affiliation: db2sdk.Affiliation(u.Affiliation),
 			}
 			if u.Boss {
 				id.Boss = true

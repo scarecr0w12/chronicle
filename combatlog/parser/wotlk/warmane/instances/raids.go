@@ -1,6 +1,7 @@
 package instances
 
 import (
+	"github.com/Emyrk/chronicle/combatlog/parser/types"
 	"github.com/Emyrk/chronicle/combatlog/parser/vanilla/state/encounters/instances"
 )
 
@@ -209,9 +210,9 @@ func IcecrownCitadelHostiles() map[uint32]instances.Identity {
 		36853: "Sindragosa",
 		36597: "The Lich King",
 	})
-	hostile[37970] = instances.Identity{Hostile: true, EncounterName: "Blood Council", Boss: true}
-	hostile[37972] = instances.Identity{Hostile: true, EncounterName: "Blood Council", Boss: true}
-	hostile[37973] = instances.Identity{Hostile: true, EncounterName: "Blood Council", Boss: true}
+	hostile[37970] = instances.Identity{Affiliation: types.AffiliationHostile, EncounterName: "Blood Council", Boss: true}
+	hostile[37972] = instances.Identity{Affiliation: types.AffiliationHostile, EncounterName: "Blood Council", Boss: true}
+	hostile[37973] = instances.Identity{Affiliation: types.AffiliationHostile, EncounterName: "Blood Council", Boss: true}
 	return hostile
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
+	"slices"
 	"time"
 
 	"github.com/Emyrk/chronicle/combatlog/parseoptions"
@@ -297,8 +298,8 @@ func (h *Hookable) FightDetectionHandler(m messages.Message) (func() error, erro
 	activeTotal := 0
 	var latestEnd *period.Moment
 	err := h.Characters.All.ForEach(func(char characters.Character) error {
-		if info := h.IdentifyUnit(char.ID()); !info.Hostile {
-			// Only consider hostile characters for fights
+		if info := h.IdentifyUnit(char.ID()); !info.CanBattle() {
+			// Only consider hostile & neutral characters for fights
 			return nil
 		}
 
@@ -400,7 +401,99 @@ func (h *Hookable) Events() *encounterevents.Events {
 	return h.events
 }
 
+// fightEncounter resolves the encounter name, type, boss status, and kill
+// classification for a single completed fight.
+func (h *Hookable) fightEncounter(fight Fight) (Encounter, error) {
+	encName := &encounterName{
+		byCharacterName: "",
+		byBossName:      "",
+		byEncounterName: "",
+		bossDeadState:   make(map[uint32]bool),
+		killed:          make(map[uint32]int),
+	}
+
+	chf := make([]CharacterFight, 0, len(fight.Hostiles))
+	for hid, hostile := range fight.Hostiles {
+		if hid != hostile.ID {
+			return Encounter{}, fmt.Errorf("inconsistent hostile ID mapping: key=%v hostile=%v", hid, hostile.ID)
+		}
+		chf = append(chf, hostile)
+	}
+
+	// Deterministic ordering
+	slices.SortFunc(chf, func(a, b CharacterFight) int {
+		if len(a.Activity) == 0 && len(b.Activity) == 0 {
+			return 0
+		}
+		if len(a.Activity) > 0 && len(b.Activity) == 0 {
+			return 1
+		}
+		if len(a.Activity) == 0 && len(b.Activity) > 0 {
+			return -1
+		}
+		return a.Activity[0].Compare(b.Activity[0])
+	})
+
+	for _, hostile := range chf {
+		id := h.IdentifyUnit(hostile.ID)
+		if !id.CanBattle() {
+			continue
+		}
+
+		encName.Apply(hostile, id, fight)
+	}
+
+	rr := fight.EndStates()
+	aBossRemains := encName.BossRemains()
+
+	// Determine kill type based on remaining enemies and boss status
+	var killType KillType
+	if len(rr.Timeouts) == 0 {
+		killType = KillTypeClean
+		if aBossRemains {
+			// All present hostiles resolved, but a required boss
+			// never appeared (e.g. King chess fight adds killed
+			// without the King). This is not a clean kill.
+			if len(fight.PlayerDeaths) == 0 {
+				killType = KillTypeReset
+			} else {
+				killType = KillTypeWipe
+			}
+		} else if rr.Slain == 0 && rr.Reset > 0 {
+			killType = KillTypeReset
+			if encName.IsBossFight() && !aBossRemains {
+				killType = KillTypePartial
+			}
+		}
+	} else if encName.IsBossFight() && !aBossRemains {
+		// No bosses remain, but it was a boss fight.
+		// An add probably lived
+		killType = KillTypePartial
+	} else {
+		if len(fight.PlayerDeaths) == 0 {
+			killType = KillTypeReset
+		} else {
+			killType = KillTypeWipe
+		}
+	}
+
+	return Encounter{
+		Name:      encName.Name(),
+		Type:      encName.Type(),
+		Combat:    fight,
+		KillType:  killType,
+		Remaining: rr.Timeouts,
+		Boss:      encName.IsBossFight(),
+	}, nil
+}
+
 func (h *Hookable) Finalize(ctx context.Context) (*FinalizedInstance, error) {
+	if h.currentFight != nil && h.currentFight.active() {
+		if len(h.currentFight.ActiveHostiles) > 0 {
+			h.logger.Error("hostiles remaining in finalized instance", slog.Int("cnt", len(h.currentFight.ActiveHostiles)))
+		}
+	}
+
 	// TODO: What about any ongoing fight? Do we finalize it? Do we discard it? Do we error?
 	//if false && c.currentFight != nil {
 	//  // TODO: We need to end any ongoing fight with what timestamp?
@@ -416,126 +509,11 @@ func (h *Hookable) Finalize(ctx context.Context) (*FinalizedInstance, error) {
 		if ctx.Err() != nil {
 			return nil, ctx.Err()
 		}
-		adEncounterName := ""
-		encounterName := ""
-		var encounterNamedAt *time.Time
-		encounterType := types.EncounterTypeTRASH
-		isBossFight := false
-		// TODO: Fix to boss count, as there can be 2 bosses
-		aBossRemains := false
-		killed := make(map[uint32]int)
-		bossesRequired := make(map[uint32]struct{})
-		for hid, hostile := range fight.Hostiles {
-			if ctx.Err() != nil {
-				return nil, ctx.Err()
-			}
-			if hid != hostile.ID {
-				return nil, fmt.Errorf("inconsistent hostile ID mapping: key=%v hostile=%v", hid, hostile.ID)
-			}
-
-			id := h.IdentifyUnit(hostile.ID)
-			if !id.Hostile {
-				continue
-			}
-
-			entry, hasEntry := hostile.ID.GetEntry()
-			lastPeriod := hostile.Activity[len(hostile.Activity)-1]
-			if id.Boss {
-				isBossFight = true
-				// Check if this boss was slain
-				aBossRemains = aBossRemains || lastPeriod.EndState != period.EndStateSlain
-			}
-
-			if hasEntry && lastPeriod.EndState == period.EndStateSlain {
-				killed[entry]++
-			}
-
-			namedAt := hostile.Activity[0].Start.Timestamp.Date()
-
-			// Prefer the earliest named hostile in the fight so encounter naming is
-			// deterministic even when multiple named boss/helper units are present.
-			if id.EncounterName != "" {
-				// Bosses always take the earliest.
-				if encounterNamedAt == nil || namedAt.Before(*encounterNamedAt) {
-					encounterName = id.EncounterName
-					encounterType = types.EncounterTypeBOSS
-					encounterNamedAt = &namedAt
-				}
-			}
-
-			if id.EncounterNameFn != nil {
-				if res := id.EncounterNameFn(fight); res != nil {
-					if encounterNamedAt == nil || namedAt.Before(*encounterNamedAt) {
-						encounterName = res.EncounterName
-						encounterNamedAt = &namedAt
-					}
-					if len(res.Bosses) > 0 {
-						encounterType = types.EncounterTypeBOSS
-						isBossFight = isBossFight || len(res.Bosses) > 0
-						for _, bossID := range res.Bosses {
-							bossesRequired[bossID] = struct{}{}
-						}
-					}
-				}
-			}
-
-			info, hasInfo := h.units.Get(hostile.ID)
-			if hasInfo {
-				if info.Name == "" || info.Name > adEncounterName {
-					adEncounterName = info.Name
-				}
-			}
+		enc, err := h.fightEncounter(fight)
+		if err != nil {
+			return nil, err
 		}
-		if encounterName == "" {
-			encounterName = adEncounterName
-		}
-
-		for k := range killed {
-			delete(bossesRequired, k)
-		}
-		aBossRemains = aBossRemains || len(bossesRequired) > 0
-
-		rr := fight.EndStates()
-
-		// Determine kill type based on remaining enemies and boss status
-		var killType KillType
-		if len(rr.Timeouts) == 0 {
-			killType = KillTypeClean
-			if aBossRemains {
-				// All present hostiles resolved, but a required boss
-				// never appeared (e.g. King chess fight adds killed
-				// without the King). This is not a clean kill.
-				if len(fight.PlayerDeaths) == 0 {
-					killType = KillTypeReset
-				} else {
-					killType = KillTypeWipe
-				}
-			} else if rr.Slain == 0 && rr.Reset > 0 {
-				killType = KillTypeReset
-				if isBossFight && !aBossRemains {
-					killType = KillTypePartial
-				}
-			}
-		} else if isBossFight && !aBossRemains {
-			// No bosses remain, but it was a boss fight.
-			// An add probably lived
-			killType = KillTypePartial
-		} else {
-			if len(fight.PlayerDeaths) == 0 {
-				killType = KillTypeReset
-			} else {
-				killType = KillTypeWipe
-			}
-		}
-
-		encounters = append(encounters, Encounter{
-			Name:      encounterName,
-			Type:      encounterType,
-			Combat:    fight,
-			KillType:  killType,
-			Remaining: rr.Timeouts,
-			Boss:      isBossFight,
-		})
+		encounters = append(encounters, enc)
 	}
 
 	for _, hook := range h.hooks {
@@ -627,4 +605,99 @@ func (h *Hookable) resolveUnknownUnits() map[uint32]UnknownUnit {
 		return nil
 	}
 	return result
+}
+
+type encounterName struct {
+	byCharacterName   string
+	byBossName        string
+	byEncounterName   string
+	byEncounterFnName string
+	encounterType     types.EncounterType
+
+	bossDeadState map[uint32]bool
+
+	killed map[uint32]int
+}
+
+func (e *encounterName) Apply(ch CharacterFight, id Identity, f Fight) {
+	e.applyState(ch, id, f)
+	e.applyName(id, f)
+}
+
+func (e *encounterName) BossRemains() bool {
+	for k := range e.killed {
+		_, exists := e.bossDeadState[k]
+		if exists {
+			e.bossDeadState[k] = true
+		}
+	}
+
+	for _, v := range e.bossDeadState {
+		if !v {
+			return true
+		}
+	}
+	return false
+}
+
+func (e *encounterName) Name() string {
+	if e.byEncounterFnName != "" {
+		return e.byEncounterFnName
+	}
+	if e.byEncounterName != "" {
+		return e.byEncounterName
+	}
+	if e.byBossName != "" {
+		return e.byBossName
+	}
+	return e.byCharacterName
+}
+
+func (e *encounterName) Type() types.EncounterType {
+	return e.encounterType
+}
+
+func (e *encounterName) IsBossFight() bool {
+	return e.encounterType == types.EncounterTypeBOSS
+}
+
+func (e *encounterName) applyState(ch CharacterFight, id Identity, f Fight) {
+	entry, hasEntry := ch.ID.GetEntry()
+	lastPeriod := ch.Activity[len(ch.Activity)-1]
+	if id.Boss {
+		e.encounterType = types.EncounterTypeBOSS
+		e.bossDeadState[entry] = false
+	}
+
+	if hasEntry && lastPeriod.EndState == period.EndStateSlain {
+		e.killed[entry]++
+	}
+
+	if id.EncounterNameFn != nil {
+		res := id.EncounterNameFn(f)
+		if res.EncounterName != "" || len(res.Bosses) > 0 {
+			e.encounterType = types.EncounterTypeBOSS
+		}
+		for _, r := range res.Bosses {
+			e.bossDeadState[r] = false
+		}
+	}
+}
+
+func (e *encounterName) applyName(id Identity, f Fight) {
+	if e.byCharacterName == "" {
+		e.byCharacterName = id.Name
+	}
+	if id.Boss && e.byBossName == "" {
+		e.byBossName = id.Name
+	}
+
+	if e.byEncounterName == "" && id.EncounterName != "" {
+		e.byEncounterName = id.EncounterName
+	}
+
+	if e.byEncounterName == "" && id.EncounterNameFn != nil {
+		res := id.EncounterNameFn(f)
+		e.byEncounterFnName = res.EncounterName
+	}
 }
