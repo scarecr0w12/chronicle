@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/Emyrk/chronicle/database/gamedb/chrondbc"
 	"github.com/Emyrk/chronicle/database/gamedb/dbcdb"
 	"github.com/Emyrk/chronicle/scripts/dbcdata/cli"
 	"github.com/Gophercraft/core/format/dbc/dbdefs"
@@ -33,6 +32,7 @@ func rootCmd() *serpent.Command {
 		cli.SpellTestDataCmd(),
 		cli.ExtractDBCCmd(),
 		cli.ExtractIconsCmd(),
+		cli.ExtractLoadingScreensCmd(),
 		demo(),
 		jsonDump(),
 	)
@@ -100,29 +100,23 @@ func demo() *serpent.Command {
 				return fmt.Errorf("(demo) open wow client: %w", err)
 			}
 
-			si, err := wc.Map()
+			//si, err := wc.Map()
+			//if err != nil {
+			//	return fmt.Errorf("read items: %w", err)
+			//}
+			//
+			//_ = si.Range(func(cursor *dbdefs.Ent_Map) bool {
+			//	fmt.Println(cursor.MapName_lang.String(), cursor.MapType)
+			//	return true
+			//})
+
+			spdb, err := wc.LoadingScreens()
 			if err != nil {
-				return fmt.Errorf("read items: %w", err)
+				return fmt.Errorf("read: %w", err)
 			}
 
-			_ = si.Range(func(cursor *dbdefs.Ent_Map) bool {
-				fmt.Println(cursor.MapName_lang.String(), cursor.MapType)
-				return true
-			})
-
-			fmt.Println("s")
-			fmt.Println(si.Len())
-
-			spdb, err := wc.Spells()
-			if err != nil {
-				return fmt.Errorf("read spells: %w", err)
-			}
-
-			_ = spdb.Range(func(cursor *dbdefs.Ent_Spell) bool {
-				if cursor.SchoolMask != 0 {
-					sp := chrondbc.SpellFromDB(cursor)
-					fmt.Println(sp.Name())
-				}
+			_ = spdb.Range(func(cursor *dbdefs.Ent_LoadingScreens) bool {
+				fmt.Println(cursor.Name, cursor.FileName)
 				//for _, v := range cursor.EffectSpellClassMaskA {
 				//	if v != 0 {
 				//		sp := chrondbc.SpellFromDB(cursor)

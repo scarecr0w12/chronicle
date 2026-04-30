@@ -6,6 +6,7 @@ require (
 	cdr.dev/slog v1.6.2-0.20250703074222-9df5e0a6c145
 	github.com/Emyrk/zedgen v0.0.0-20260212105940-a30f9042561f
 	github.com/Gophercraft/core v0.5.2-0.20240410205646-00865bbdb78a
+	github.com/HugoSmits86/nativewebp v1.2.1
 	github.com/KromDaniel/regengo v0.5.3
 	github.com/Masterminds/semver v1.5.0
 	github.com/authzed/authzed-go v1.7.0
@@ -314,6 +315,7 @@ require (
 	go.uber.org/zap v1.27.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.3 // indirect
 	go.yaml.in/yaml/v3 v3.0.4 // indirect
+	golang.org/x/image v0.24.0 // indirect
 	golang.org/x/net v0.48.0 // indirect
 	golang.org/x/oauth2 v0.34.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect

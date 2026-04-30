@@ -2,9 +2,12 @@ package dbcdb
 
 import (
 	"bytes"
+	"encoding/binary"
+	"sync"
 
 	"github.com/Gophercraft/core/format/content"
 	"github.com/Gophercraft/core/format/dbc"
+	"github.com/Gophercraft/core/format/dbc/dbd"
 	"github.com/Gophercraft/core/format/dbc/dbdefs"
 	"github.com/Gophercraft/core/vsn"
 )
@@ -67,6 +70,53 @@ func (w *WoWClient) ItemRandomProperties() (Table[dbdefs.Ent_ItemRandomPropertie
 	}
 
 	return WrapTable[dbdefs.Ent_ItemRandomProperties](table), nil
+}
+
+func (w *WoWClient) LoadingScreens() (Table[dbdefs.Ent_LoadingScreens], error) {
+	data, err := w.ReadFile("DBFilesClient\\LoadingScreens.dbc")
+	if err != nil {
+		return nil, err
+	}
+
+	// Some WotLK private servers (Warmane, Ascension) ship LoadingScreens.dbc
+	// without the HasWideScreen column. Detect this by checking the record size
+	// in the file header and register a 3-column layout if needed.
+	if len(data) >= 20 {
+		recordSize := binary.LittleEndian.Uint32(data[12:16])
+		if recordSize == 12 {
+			fixLoadingScreensLayout()
+		}
+	}
+
+	db := dbc.NewDB(w.Build())
+	table, err := db.Open("LoadingScreens", bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+
+	return WrapTable[dbdefs.Ent_LoadingScreens](table), nil
+}
+
+var fixedLoadingScreens sync.Once
+
+func fixLoadingScreensLayout() {
+	fixedLoadingScreens.Do(func() {
+		def, err := dbdefs.Lookup("LoadingScreens")
+		if err != nil {
+			return
+		}
+		// Replace all layouts with a single 3-column layout covering all builds.
+		// This handles private servers whose LoadingScreens.dbc omits HasWideScreen.
+		def.Layouts = []dbd.Layout{{
+			BuildRanges: []vsn.BuildRange{vsn.Range(0, vsn.Max)},
+			Columns: []dbd.LayoutColumn{
+				{Name: "ID", Bits: 32},
+				{Name: "Name"},
+				{Name: "FileName"},
+			},
+		}}
+		dbdefs.Register(def)
+	})
 }
 
 func (w *WoWClient) Spells() (Table[dbdefs.Ent_Spell], error) {

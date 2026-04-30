@@ -74,14 +74,6 @@ github.com/AzureAD/microsoft-authentication-library-for-go v1.5.0/go.mod h1:HKpQ
 github.com/BurntSushi/toml v0.3.1/go.mod h1:xHWCNGjB5oqiDr8zfno3MHue2Ht5sIBksp03qcyfWMU=
 github.com/BurntSushi/toml v1.5.0 h1:W5quZX/G/csjUnuI8SUYlsHs9M38FC7znL0lIO+DvMg=
 github.com/BurntSushi/toml v1.5.0/go.mod h1:ukJfTF/6rtPPRCnwkur4qwRxa8vTRFBF0uk2lLoLwho=
-github.com/Emyrk/core v0.0.0-20260420081341-5169560c2f84 h1:tQs3Tc4hiooRFutxdhhleV8c09bnPPlKvMeZC2UFLqs=
-github.com/Emyrk/core v0.0.0-20260420081341-5169560c2f84/go.mod h1:BLkLA6t8H1k2uugNpTVFbr8dKFehuP+8z/RsY//L0pI=
-github.com/Emyrk/core v0.0.0-20260420083951-93f52500f4f6 h1:yGIsFGXOIC4DC9ae7hXT1aSSxY2KLUIL/i2mP9BlNH4=
-github.com/Emyrk/core v0.0.0-20260420083951-93f52500f4f6/go.mod h1:BLkLA6t8H1k2uugNpTVFbr8dKFehuP+8z/RsY//L0pI=
-github.com/Emyrk/core v0.0.0-20260420091949-31a9e3f3f80d h1:Dz1IsyN6Ry9s0+ml3QhbRiDwV7L2KDDE5RPVc6ztLOQ=
-github.com/Emyrk/core v0.0.0-20260420091949-31a9e3f3f80d/go.mod h1:BLkLA6t8H1k2uugNpTVFbr8dKFehuP+8z/RsY//L0pI=
-github.com/Emyrk/core v0.0.0-20260420221854-5926ee924c45 h1:cicoUWwlDNxoEux6Z4U4abg5AaLipI7upXx96SFVtGA=
-github.com/Emyrk/core v0.0.0-20260420221854-5926ee924c45/go.mod h1:BLkLA6t8H1k2uugNpTVFbr8dKFehuP+8z/RsY//L0pI=
 github.com/Emyrk/core v0.0.0-20260420221947-ce916b0df45f h1:TeCKj7fpTmtUAMv/AMs1ubcgHf/yMU+OUWtYrvprrqk=
 github.com/Emyrk/core v0.0.0-20260420221947-ce916b0df45f/go.mod h1:BLkLA6t8H1k2uugNpTVFbr8dKFehuP+8z/RsY//L0pI=
 github.com/Emyrk/core/gotiny v0.0.0-20260217042645-fddd00b2f688 h1:cE7VzZQ0d4u/1slm+qb+I8MOQjsUHb6ZlBFVo2b7kI4=
@@ -90,6 +82,8 @@ github.com/Emyrk/zedgen v0.0.0-20260212105940-a30f9042561f h1:pTAJh+8PR9GJ9LbCzq
 github.com/Emyrk/zedgen v0.0.0-20260212105940-a30f9042561f/go.mod h1:QTx3b7aEUyukkswuvRo2cuN8+qFtaLcnC1AvqGKPWOo=
 github.com/Gophercraft/log v0.0.0-20240214234900-fcacaad0d20e h1:27s+u/BsNt9wqfwUG67tYg6/PFAk5X0U6bl3fKxUQro=
 github.com/Gophercraft/log v0.0.0-20240214234900-fcacaad0d20e/go.mod h1:DhQC1oeHSCtpDtZoXfvzjniHT5cv3IkQs3gE4PtBGHY=
+github.com/HugoSmits86/nativewebp v1.2.1 h1:dJbfulw6WRf6rTcth6TwgEVwlBeP3vdZIJUIoySmeHQ=
+github.com/HugoSmits86/nativewebp v1.2.1/go.mod h1:YNQuWenlVmSUUASVNhTDwf4d7FwYQGbGhklC8p72Vr8=
 github.com/KromDaniel/regengo v0.5.3 h1:tykY2dlGbMwqBaJHBTIaOBoFoopyOiKJOq175INfmDk=
 github.com/KromDaniel/regengo v0.5.3/go.mod h1:2ph90Eh7i2dYCq1ikVNJDqzPGTvUBUNXIPRCZgR0e58=
 github.com/Masterminds/goutils v1.1.1 h1:5nUrii3FMTL5diU80unEVvNevw1nH4+ZV4DSLVJLSYI=
@@ -872,6 +866,8 @@ golang.org/x/crypto v0.46.0/go.mod h1:Evb/oLKmMraqjZ2iQTwDwvCtJkczlDuTmdJXoZVzqU
 golang.org/x/exp v0.0.0-20190121172915-509febef88a4/go.mod h1:CJ0aWSM057203Lf6IL+f9T1iT9GByDxfZKAQTCR3kQA=
 golang.org/x/exp v0.0.0-20251209150349-8475f28825e9 h1:MDfG8Cvcqlt9XXrmEiD4epKn7VJHZO84hejP9Jmp0MM=
 golang.org/x/exp v0.0.0-20251209150349-8475f28825e9/go.mod h1:EPRbTFwzwjXj9NpYyyrvenVh9Y+GFeEvMNh7Xuz7xgU=
+golang.org/x/image v0.24.0 h1:AN7zRgVsbvmTfNyqIbbOraYL8mSwcKncEj8ofjgzcMQ=
+golang.org/x/image v0.24.0/go.mod h1:4b/ITuLfqYq1hqZcjofwctIhi7sZh2WaCjvsBNjjya8=
 golang.org/x/lint v0.0.0-20181026193005-c67002cb31c3/go.mod h1:UVdnD1Gm6xHRNCYTkRU2/jEulfH38KcIWyp/GAMgvoE=
 golang.org/x/lint v0.0.0-20190227174305-5b3e6a55c961/go.mod h1:wehouNa3lNwaWXcvxsM5YxQ5yQlVC4a0KAMCusXpPoU=
 golang.org/x/lint v0.0.0-20190313153728-d0100b6bd8b3/go.mod h1:6SW0HCj/g11FgYtHlgUYUwCkIfeOF89ocIRzGO/8vkc=

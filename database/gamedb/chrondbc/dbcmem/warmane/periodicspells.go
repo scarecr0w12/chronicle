@@ -1897,7 +1897,7 @@ func init() {
 		54396: {Name: "Optic Link", HasDirect: false},
 		54399: {Name: "Water Bubble", HasDirect: false},
 		54417: {Name: "Ray of Suffering", HasDirect: false},
-		54433: {Name: "Affiliation Airspace", HasDirect: false},
+		54433: {Name: "Hostile Airspace", HasDirect: false},
 		54451: {Name: "Withered Touch", HasDirect: false},
 		54453: {Name: "Web Wrap", HasDirect: false},
 		54469: {Name: "Plague Strike", HasDirect: false},

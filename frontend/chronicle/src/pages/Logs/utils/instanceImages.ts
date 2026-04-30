@@ -27,6 +27,15 @@ export const INSTANCE_CONFIG: Record<string, InstanceConfig> = {
   "Karazhan Crypts": { background: "/c/images/loadingscreens/LoadscreenKarazhanCrypt.webp", bossCount: 3, abbrev: "Crypt", },
   "Hateforge Quarry": { background: "/c/images/loadingscreens/LoadScreenHateforge.webp", bossCount: 4, abbrev: "HQ", },
   "Gilneas City": { background: "/c/images/loadingscreens/LoadScreenGilneasCity.webp", bossCount: 3, abbrev: "Gilneas", },
+  "Icecrown Citadel": { background: "/c/images/loadingscreens/loadscreenicecrowncitadel.webp", bossCount: 12, abbrev: "ICC", category: "raid" },
+  "Ruby Sanctum": { background: "/c/images/loadingscreens/loadscreenrubysanctum.webp", bossCount: 1, abbrev: "RS", category: "raid" },
+  // TBC Raids
+  "Zul'Aman": { background: "/c/images/loadingscreens/LOADSCREENZULAMAN.webp", bossCount: 6, abbrev: "ZA", category: "raid" },
+  "Black Temple": { background: "/c/images/loadingscreens/LoadScreenBlackTemple.webp", bossCount: 9, abbrev: "BT", category: "raid" },
+  "Hyjal Summit": { background: "/c/images/loadingscreens/LoadScreenHyjal.webp", bossCount: 5, abbrev: "Hyjal", category: "raid" },
+  "Magtheridon's Lair": { background: "/c/images/loadingscreens/LOADSCREENHELLFIRECITADELRAID.webp", bossCount: 1, abbrev: "Mag", category: "raid" },
+  "Tempest Keep": { background: "/c/images/loadingscreens/LOADSCREENTEMPESTKEEP.webp", bossCount: 4, abbrev: "TK", category: "raid" },
+  "Sunwell Plateau": { background: "/c/images/loadingscreens/LoadScreenSunwell5Man.webp", bossCount: 6, abbrev: "SWP", category: "raid" },
   "World Bosses": { background: "/c/images/loadingscreens/LoadScreenRaid.webp", abbrev: "World", category: "raid" },
   "Timbermaw Hold": { background: "/c/images/loadingscreens/LoadScreenTimbermaw.webp", abbrev: "TMH", category: "raid"},
   "Windhorn Canyon": { background: "/c/images/loadingscreens/LoadScreenWindhorn.webp", abbrev: "WHC" },
@@ -60,6 +69,23 @@ export const INSTANCE_CONFIG: Record<string, InstanceConfig> = {
   "Stormwind Stockade": { background: "/c/images/loadingscreens/LoadScreenStormwindStockade.webp", abbrev: "Stocks" },
   "Stockade": { background: "/c/images/loadingscreens/LoadScreenStormwindStockade.webp", abbrev: "Stocks" },
   "Caverns of Time": { background: "/c/images/loadingscreens/LoadScreenCavernsTime.webp", abbrev: "CoT" },
+  // TBC Dungeons
+  "Auchenai Crypts": { background: "/c/images/loadingscreens/LOADSCREENAUCHINDOUN.webp", abbrev: "AC" },
+  "Mana-Tombs": { background: "/c/images/loadingscreens/LOADSCREENAUCHINDOUN.webp", abbrev: "MT" },
+  "Sethekk Halls": { background: "/c/images/loadingscreens/LOADSCREENAUCHINDOUN.webp", abbrev: "SH" },
+  "Shadow Labyrinth": { background: "/c/images/loadingscreens/LOADSCREENAUCHINDOUN.webp", abbrev: "SLab" },
+  "Hellfire Ramparts": { background: "/c/images/loadingscreens/LOADSCREENHELLFIRECITADEL5MAN.webp", abbrev: "Ramps" },
+  "Blood Furnace": { background: "/c/images/loadingscreens/LOADSCREENHELLFIRECITADEL5MAN.webp", abbrev: "BF" },
+  "Shattered Halls": { background: "/c/images/loadingscreens/LOADSCREENHELLFIRECITADEL5MAN.webp", abbrev: "SHalls" },
+  "The Mechanar": { background: "/c/images/loadingscreens/LOADSCREENTEMPESTKEEP.webp", abbrev: "Mech" },
+  "The Botanica": { background: "/c/images/loadingscreens/LOADSCREENTEMPESTKEEP.webp", abbrev: "Bot" },
+  "The Arcatraz": { background: "/c/images/loadingscreens/LOADSCREENTEMPESTKEEP.webp", abbrev: "Arc" },
+  "Magisters' Terrace": { background: "/c/images/loadingscreens/LoadScreenSunwell5Man.webp", abbrev: "MgT" },
+  // WotLK Dungeons
+  "The Nexus": { background: "/c/images/loadingscreens/loadscreennexus80.webp", abbrev: "Nexus" },
+  "Forge of Souls": { background: "/c/images/loadingscreens/loadscreenicecrown5man.webp", abbrev: "FoS" },
+  "Pit of Saron": { background: "/c/images/loadingscreens/loadscreenpitofsaron.webp", abbrev: "PoS" },
+  "Halls of Reflection": { background: "/c/images/loadingscreens/loadscreenhallsofreflection.webp", abbrev: "HoR" },
 };
 
 export const DEFAULT_BACKGROUND = "/c/images/loadingscreens/LoadScreenDungeon.webp";

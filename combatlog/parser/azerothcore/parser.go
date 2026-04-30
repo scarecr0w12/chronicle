@@ -126,7 +126,7 @@ func (p *Parser) parseZoneInfo(ts time.Time, m *wotlk.Matched, _ string) ([]mess
 			MessageBase: messages.Base(ts),
 			Zone: zone.Zone{
 				Seen:         ts,
-				Name:         strings.ToLower(zoneName),
+				Name:         zoneName,
 				MapID:        mapID,
 				InstanceID:   instanceID,
 				InstanceType: instanceType,

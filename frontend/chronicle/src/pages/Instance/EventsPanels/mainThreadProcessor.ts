@@ -22,6 +22,7 @@ import {
   FastDispelCursor,
   FastInterruptCursor,
   FastCombatantInfoCursor,
+  FastAbsorbedCursor,
   type ReusableDamage,
   type ReusableHeal,
   type ReusableResourceChange,
@@ -37,6 +38,7 @@ import {
   type ReusableDispel,
   type ReusableInterrupt,
   type ReusableCombatantInfo,
+  type ReusableAbsorbed,
 } from "@/api/protodecode/decode";
 import { processorRegistry } from "./processors";
 import { compileFilters, type FilterPredicate, type PanelFilter } from "./processors/filters";
@@ -64,14 +66,14 @@ const _filterCache = new Map<string, {
 /**
  * Union of all reusable event types
  */
-type AnyReusableEvent = ReusableDamage | ReusableHeal | ReusableResourceChange | ReusableExtraAttack | ReusableSlain | ReusableCast | ReusableAura | ReusableSpellGo | ReusableAuraCast | ReusableSpellStart | ReusableSpellFail | ReusableUnitClassification | ReusableDispel | ReusableInterrupt | ReusableCombatantInfo;
+type AnyReusableEvent = ReusableDamage | ReusableHeal | ReusableResourceChange | ReusableExtraAttack | ReusableSlain | ReusableCast | ReusableAura | ReusableSpellGo | ReusableAuraCast | ReusableSpellStart | ReusableSpellFail | ReusableUnitClassification | ReusableDispel | ReusableInterrupt | ReusableCombatantInfo | ReusableAbsorbed;
 
 /**
  * A cursor wrapper that supports peeking at the next event without consuming it.
  */
 interface PeekableCursor {
   streamType: StreamType;
-  cursor: FastDamageCursor | FastHealCursor | FastResourceChangeCursor | FastExtraAttackCursor | FastSlainCursor | FastCastCursor | FastAuraCursor | FastSpellGoCursor | FastAuraCastCursor | FastSpellStartCursor | FastSpellFailCursor | FastUnitClassificationCursor | FastDispelCursor | FastInterruptCursor | FastCombatantInfoCursor;
+  cursor: FastDamageCursor | FastHealCursor | FastResourceChangeCursor | FastExtraAttackCursor | FastSlainCursor | FastCastCursor | FastAuraCursor | FastSpellGoCursor | FastAuraCastCursor | FastSpellStartCursor | FastSpellFailCursor | FastUnitClassificationCursor | FastDispelCursor | FastInterruptCursor | FastCombatantInfoCursor | FastAbsorbedCursor;
   peeked: { event: AnyReusableEvent; encounterID: string; firstTimestamp: Date } | null;
 }
 
@@ -193,6 +195,8 @@ function createCursor(type: StreamType, data: Uint8Array): PeekableCursor {
     ? new FastInterruptCursor(data)
     : type === "combatant_info"
     ? new FastCombatantInfoCursor(data)
+    : type === "absorbed"
+    ? new FastAbsorbedCursor(data)
     : null;
 
   if (!cursor) {
