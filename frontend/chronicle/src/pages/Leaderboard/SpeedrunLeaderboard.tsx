@@ -1,7 +1,7 @@
 import { useSearchParams } from "react-router-dom"
 import { useQuery } from "@tanstack/react-query"
 import { Trophy, Loader2, SlidersHorizontal, Check, Users, Globe, X, ChevronDown, Info } from "lucide-react"
-import { INSTANCE_CONFIG } from "../Logs/utils/instanceImages"
+import { getInstanceConfig } from "../Logs/utils/instanceImages"
 import { useState, useEffect, useCallback, useRef } from "react"
 import type { SpeedrunLeaderboardEntry, SpeedrunRulesResponse } from "../../api/typesGenerated"
 import { Podium } from "./Podium"
@@ -438,7 +438,7 @@ export function SpeedrunLeaderboard() {
   const top3 = entries?.slice(0, 3) ?? []
   const rest = entries?.slice(3) ?? []
 
-  const bgImage = selectedInstance ? INSTANCE_CONFIG[selectedInstance]?.background : undefined
+  const bgImage = selectedInstance ? getInstanceConfig(selectedInstance)?.background : undefined
 
   return (
     <div className="w-full">

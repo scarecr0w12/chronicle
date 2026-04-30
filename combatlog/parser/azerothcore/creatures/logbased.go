@@ -11,12 +11,15 @@ import (
 
 type LogBased struct {
 	*characters.Base[*period.InactivityPeriod]
+	*Unstartable
 }
 
 func NewLogBasedCharacter(id guid.GUID, all *characters.Characters) *LogBased {
-	return &LogBased{
+	c := &LogBased{
 		Base: characters.NewBaseCharacter[*period.InactivityPeriod](id, all),
 	}
+	c.Unstartable = &Unstartable{CharacterBase: c}
+	return c
 }
 
 func (c *LogBased) Process(m messages.Message) error {
@@ -49,6 +52,12 @@ func (c *LogBased) Process(m messages.Message) error {
 		}
 	}
 
+	// We want combat start to be server side defined. So only bumping should work.
+	err := characters.ProcessCommonActivity(c.Unstartable, m)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -57,4 +66,12 @@ func (c *LogBased) Start(reason string, m messages.Message) {
 		period.NewInactivityPeriod(c.ID(), time.Minute),
 		reason, m,
 	)
+}
+
+type Unstartable struct {
+	characters.CharacterBase
+}
+
+func (c *Unstartable) Start(reason string, m messages.Message) {
+	c.Bump(reason, m)
 }

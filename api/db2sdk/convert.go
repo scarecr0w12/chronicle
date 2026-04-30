@@ -517,15 +517,4 @@ func ArmorySearchResult(row database.SearchGamePlayersRow) chroniclesdk.ArmorySe
 	}
 }
 
-func Affiliation(da database.UnitAffiliation) types.Affiliation {
-	switch da {
-	case database.UnitAffiliationHostile:
-		return types.AffiliationHostile
-	case database.UnitAffiliationNeutral:
-		return types.AffiliationNeutral
-	case database.UnitAffiliationFriendly:
-		return types.AffiliationFriendly
-	default:
-		return types.AffiliationUnknown
-	}
-}
+

@@ -20,7 +20,6 @@ type tableDetector struct {
 // tableDetectors is used by the shared detectFiles/detectTable helpers.
 var tableDetectors = []tableDetector{
 	{"world_display_info", []string{"ID", "icon"}},
-	{"world_creature_spawn", []string{"guid", "map"}},
 	{"world_creature_template", []string{"entry", "display_id1", "subname"}},
 	{"world_item_template", []string{"entry", "inventory_type"}},
 	{"world_item_enchantment", []string{"entry", "ench", "chance"}},
@@ -45,10 +44,6 @@ var tableSchemas = map[string]*tableSchema{
 		Columns:   []string{"id", "icon"},
 		PKColumns: []string{"id"},
 		JSONToDB:  map[string]string{"ID": "id"},
-	},
-	"world_creature_spawn": {
-		Columns:   []string{"guid", "id", "id2", "id3", "id4", "map"},
-		PKColumns: []string{"guid"},
 	},
 	"world_creature_template": {
 		Columns: []string{

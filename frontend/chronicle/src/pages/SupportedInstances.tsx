@@ -3,8 +3,8 @@ import { useSupportedInstances } from "@/api/queries";
 import { Loader2, X, Shield, MapPin, Skull, Swords } from "lucide-react";
 import type { SupportedInstance, SupportedInstanceUnit } from "@/api/typesGenerated";
 import {
-  INSTANCE_CONFIG,
   getInstanceBackground,
+  getInstanceConfig,
   type InstanceCategory,
 } from "@/pages/Logs/utils/instanceImages";
 import { cn } from "@/lib/utils";
@@ -190,7 +190,7 @@ interface InstanceCardProps {
 function InstanceCard({ instance, onClick }: InstanceCardProps) {
   const [imageError, setImageError] = useState(false);
   const bg = getInstanceBackground(instance.name);
-  const config = INSTANCE_CONFIG[instance.name];
+  const config = getInstanceConfig(instance.name);
   const bossCount = instance.bosses?.length ?? config?.bossCount ?? 0;
 
   return (
@@ -266,7 +266,7 @@ export function SupportedInstances() {
     const other: SupportedInstance[] = [];
 
     for (const inst of supportedInstances) {
-      const config = INSTANCE_CONFIG[inst.name];
+      const config = getInstanceConfig(inst.name);
       const cat = config?.category;
       if (cat === "raid") raids.push(inst);
       else if (cat === "dungeon") dungeons.push(inst);

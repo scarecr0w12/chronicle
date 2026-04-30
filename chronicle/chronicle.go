@@ -63,8 +63,8 @@ type Chronicle struct {
 	WoWDB              *gamedb.WoWDB
 	ItemFetcher        gamedb.GearResolver
 	metrics            *logParseMetrics
-	emitParsingLogs    bool
-	instanceRegistry   registryProvider
+	emitParsingLogs  bool
+	instanceRegistry *registry.Registry
 
 	mu                     sync.Mutex
 	insertParsedInstanceMu sync.Mutex
@@ -79,30 +79,7 @@ type Options struct {
 	EmitParsingLogs bool
 }
 
-type registryProvider interface {
-	Registry() *registry.Registry
-}
-
-type staticRegistryProvider struct {
-	reg *registry.Registry
-}
-
-func (s staticRegistryProvider) Registry() *registry.Registry {
-	return s.reg
-}
-
 func New(ctx context.Context, logger *slog.Logger, opts Options) (*Chronicle, error) {
-	fallback := registry.DefaultRegistry(logger)
-	regProvider := registryProvider(staticRegistryProvider{reg: fallback})
-	if opts.Zed != nil {
-		dbReg, err := registry.NewDBRegistry(ctx, logger, opts.Zed, opts.Ps, fallback)
-		if err != nil {
-			logger.Warn("failed to initialize DB-backed instance registry, falling back to static registry", slog.String("error", err.Error()))
-		} else {
-			regProvider = dbReg
-		}
-	}
-
 	c := &Chronicle{
 		AppContext:         ctx,
 		Storage:            opts.Storage,
@@ -111,10 +88,10 @@ func New(ctx context.Context, logger *slog.Logger, opts Options) (*Chronicle, er
 		logger:             logger,
 		WoWDB:              opts.WoWDB,
 		TemporaryDirectory: filepath.Join(os.TempDir(), "chronicle_uploads"),
-		metrics:            newLogParseMetrics(opts.Registry),
-		ItemFetcher:        opts.WoWDB,
-		emitParsingLogs:    opts.EmitParsingLogs,
-		instanceRegistry:   regProvider,
+		metrics:          newLogParseMetrics(opts.Registry),
+		ItemFetcher:      opts.WoWDB,
+		emitParsingLogs:  opts.EmitParsingLogs,
+		instanceRegistry: registry.DefaultRegistry(logger),
 	}
 
 	err := c.initStorage(ctx)
@@ -131,7 +108,7 @@ func (c *Chronicle) EmitParsingLogs() bool {
 }
 
 func (c *Chronicle) Registry() *registry.Registry {
-	return c.instanceRegistry.Registry()
+	return c.instanceRegistry
 }
 
 func (c *Chronicle) SetQueue(queue *riverqueue.Queues) {

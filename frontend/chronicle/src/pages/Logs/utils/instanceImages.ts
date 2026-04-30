@@ -64,23 +64,35 @@ export const INSTANCE_CONFIG: Record<string, InstanceConfig> = {
 
 export const DEFAULT_BACKGROUND = "/c/images/loadingscreens/LoadScreenDungeon.webp";
 
+// Pre-computed lowercase → canonical name map for case-insensitive lookup
+const INSTANCE_NAME_LOOKUP = new Map<string, string>(
+  Object.keys(INSTANCE_CONFIG).map((name) => [name.toLowerCase(), name]),
+);
+
+/** Resolve an instance name case-insensitively, returning the canonical config key or undefined. */
+export function resolveInstanceName(name: string): string | undefined {
+  // Fast path: exact match
+  if (name in INSTANCE_CONFIG) return name;
+  return INSTANCE_NAME_LOOKUP.get(name.toLowerCase());
+}
+
 export function getInstanceConfig(name: string): InstanceConfig | undefined {
-  return INSTANCE_CONFIG[name];
+  const canonical = resolveInstanceName(name);
+  return canonical ? INSTANCE_CONFIG[canonical] : undefined;
 }
 
 export function getInstanceCategory(name: string): InstanceCategory {
-  const config = INSTANCE_CONFIG[name];
-  if (!config) {
-    return "unknown";
-  }
-
-  return config.category ?? "dungeon";
+  const canonical = resolveInstanceName(name);
+  if (!canonical) return "unknown";
+  return INSTANCE_CONFIG[canonical].category ?? "dungeon";
 }
 
 export function getInstanceBackground(name: string): string {
-  return INSTANCE_CONFIG[name]?.background ?? DEFAULT_BACKGROUND;
+  const canonical = resolveInstanceName(name);
+  return canonical ? INSTANCE_CONFIG[canonical].background : DEFAULT_BACKGROUND;
 }
 
 export function getInstanceAbbrev(name: string): string {
-  return INSTANCE_CONFIG[name]?.abbrev ?? name;
+  const canonical = resolveInstanceName(name);
+  return canonical ? (INSTANCE_CONFIG[canonical].abbrev ?? canonical) : name;
 }

@@ -47,9 +47,6 @@ type sqlcQuerier interface {
 	DeleteWoWServer(ctx context.Context, id uuid.UUID) error
 	DeleteWoWServerRealm(ctx context.Context, id uuid.UUID) error
 	DeleteWorld(ctx context.Context, id uuid.UUID) error
-	DeleteWorldInstanceTemplate(ctx context.Context, id uuid.UUID) error
-	DeleteWorldInstanceUnits(ctx context.Context, instanceID uuid.UUID) error
-	DeleteWorldInstanceZoneNames(ctx context.Context, instanceID uuid.UUID) error
 	DeleteYoutubeVideoByInstanceOrSlug(ctx context.Context, arg DeleteYoutubeVideoByInstanceOrSlugParams) error
 	EncountersByInstanceID(ctx context.Context, instanceID uuid.UUID) ([]LogInstanceEncounter, error)
 	FindDuplicateInstanceCandidates(ctx context.Context, arg FindDuplicateInstanceCandidatesParams) ([]FindDuplicateInstanceCandidatesRow, error)
@@ -144,9 +141,6 @@ type sqlcQuerier interface {
 	GetWoWServerRealm(ctx context.Context, id uuid.UUID) (WowServerRealm, error)
 	GetWorld(ctx context.Context, id uuid.UUID) (World, error)
 	GetWorldByName(ctx context.Context, name string) (World, error)
-	GetWorldInstanceTemplateByZoneName(ctx context.Context, zoneName string) (WorldInstanceTemplate, error)
-	GetWorldInstanceUnits(ctx context.Context, instanceID uuid.UUID) ([]GetWorldInstanceUnitsRow, error)
-	GetWorldInstanceZoneNames(ctx context.Context, instanceID uuid.UUID) ([]WorldInstanceZoneName, error)
 	GetWorldsByServer(ctx context.Context, serverID uuid.UUID) ([]World, error)
 	InsertEncounter(ctx context.Context, arg InsertEncounterParams) (LogInstanceEncounter, error)
 	InsertEncounterCharacterFights(ctx context.Context, arg []InsertEncounterCharacterFightsParams) *InsertEncounterCharacterFightsBatchResults
@@ -174,7 +168,6 @@ type sqlcQuerier interface {
 	InsertWoWServer(ctx context.Context, arg InsertWoWServerParams) (WowServer, error)
 	InsertWoWServerRealm(ctx context.Context, arg InsertWoWServerRealmParams) (WowServerRealm, error)
 	InsertWorld(ctx context.Context, name string) (World, error)
-	InsertWorldInstanceZoneName(ctx context.Context, arg InsertWorldInstanceZoneNameParams) error
 	Instance(ctx context.Context, id uuid.UUID) (LogInstancesGuild, error)
 	InstanceBySlug(ctx context.Context, hashedSlug pgtype.Text) (LogInstancesGuild, error)
 	InstanceEvent(ctx context.Context, arg InstanceEventParams) (LogInstanceEvent, error)
@@ -207,9 +200,6 @@ type sqlcQuerier interface {
 	ListWoWServerRealms(ctx context.Context, serverID uuid.UUID) ([]WowServerRealm, error)
 	// Servers
 	ListWoWServers(ctx context.Context) ([]WowServer, error)
-	ListWorldInstanceTemplates(ctx context.Context) ([]WorldInstanceTemplate, error)
-	ListWorldInstanceUnits(ctx context.Context) ([]ListWorldInstanceUnitsRow, error)
-	ListWorldInstanceZoneNames(ctx context.Context) ([]WorldInstanceZoneName, error)
 	ListWorlds(ctx context.Context) ([]World, error)
 	MarkEmailVerified(ctx context.Context, userAuthID uuid.UUID) error
 	PruneParsedInstanceFromLogOutput(ctx context.Context, arg PruneParsedInstanceFromLogOutputParams) error
@@ -255,8 +245,6 @@ type sqlcQuerier interface {
 	UpsertRetentionPolicyByRealm(ctx context.Context, arg UpsertRetentionPolicyByRealmParams) (RetentionPolicy, error)
 	UpsertRetentionRule(ctx context.Context, arg UpsertRetentionRuleParams) (RetentionRule, error)
 	UpsertUserActionBarSlots(ctx context.Context, arg UpsertUserActionBarSlotsParams) (UpsertUserActionBarSlotsRow, error)
-	UpsertWorldInstanceTemplate(ctx context.Context, arg UpsertWorldInstanceTemplateParams) (WorldInstanceTemplate, error)
-	UpsertWorldInstanceUnit(ctx context.Context, arg UpsertWorldInstanceUnitParams) error
 }
 
 var _ sqlcQuerier = (*sqlQuerier)(nil)

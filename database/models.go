@@ -13,67 +13,6 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
-type InstanceCategory string
-
-const (
-	InstanceCategoryRaid    InstanceCategory = "raid"
-	InstanceCategoryDungeon InstanceCategory = "dungeon"
-	InstanceCategoryPvp     InstanceCategory = "pvp"
-)
-
-func (e *InstanceCategory) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = InstanceCategory(s)
-	case string:
-		*e = InstanceCategory(s)
-	default:
-		return fmt.Errorf("unsupported scan type for InstanceCategory: %T", src)
-	}
-	return nil
-}
-
-type NullInstanceCategory struct {
-	InstanceCategory InstanceCategory `json:"instance_category"`
-	Valid            bool             `json:"valid"` // Valid is true if InstanceCategory is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullInstanceCategory) Scan(value interface{}) error {
-	if value == nil {
-		ns.InstanceCategory, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.InstanceCategory.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullInstanceCategory) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.InstanceCategory), nil
-}
-
-func (e InstanceCategory) Valid() bool {
-	switch e {
-	case InstanceCategoryRaid,
-		InstanceCategoryDungeon,
-		InstanceCategoryPvp:
-		return true
-	}
-	return false
-}
-
-func AllInstanceCategoryValues() []InstanceCategory {
-	return []InstanceCategory{
-		InstanceCategoryRaid,
-		InstanceCategoryDungeon,
-		InstanceCategoryPvp,
-	}
-}
-
 type ItemEffectType string
 
 const (
@@ -445,73 +384,6 @@ func AllRiverJobStateValues() []RiverJobState {
 		RiverJobStateRetryable,
 		RiverJobStateRunning,
 		RiverJobStateScheduled,
-	}
-}
-
-type UnitAffiliation string
-
-const (
-	UnitAffiliationUnknown  UnitAffiliation = "unknown"
-	UnitAffiliationFriendly UnitAffiliation = "friendly"
-	UnitAffiliationNeutral  UnitAffiliation = "neutral"
-	UnitAffiliationHostile  UnitAffiliation = "hostile"
-	UnitAffiliationVary     UnitAffiliation = "vary"
-)
-
-func (e *UnitAffiliation) Scan(src interface{}) error {
-	switch s := src.(type) {
-	case []byte:
-		*e = UnitAffiliation(s)
-	case string:
-		*e = UnitAffiliation(s)
-	default:
-		return fmt.Errorf("unsupported scan type for UnitAffiliation: %T", src)
-	}
-	return nil
-}
-
-type NullUnitAffiliation struct {
-	UnitAffiliation UnitAffiliation `json:"unit_affiliation"`
-	Valid           bool            `json:"valid"` // Valid is true if UnitAffiliation is not NULL
-}
-
-// Scan implements the Scanner interface.
-func (ns *NullUnitAffiliation) Scan(value interface{}) error {
-	if value == nil {
-		ns.UnitAffiliation, ns.Valid = "", false
-		return nil
-	}
-	ns.Valid = true
-	return ns.UnitAffiliation.Scan(value)
-}
-
-// Value implements the driver Valuer interface.
-func (ns NullUnitAffiliation) Value() (driver.Value, error) {
-	if !ns.Valid {
-		return nil, nil
-	}
-	return string(ns.UnitAffiliation), nil
-}
-
-func (e UnitAffiliation) Valid() bool {
-	switch e {
-	case UnitAffiliationUnknown,
-		UnitAffiliationFriendly,
-		UnitAffiliationNeutral,
-		UnitAffiliationHostile,
-		UnitAffiliationVary:
-		return true
-	}
-	return false
-}
-
-func AllUnitAffiliationValues() []UnitAffiliation {
-	return []UnitAffiliation{
-		UnitAffiliationUnknown,
-		UnitAffiliationFriendly,
-		UnitAffiliationNeutral,
-		UnitAffiliationHostile,
-		UnitAffiliationVary,
 	}
 }
 
@@ -1332,15 +1204,6 @@ type World struct {
 	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
 }
 
-type WorldCreatureSpawn struct {
-	Guid int32 `db:"guid" json:"guid"`
-	ID   int32 `db:"id" json:"id"`
-	Id2  int32 `db:"id2" json:"id2"`
-	Id3  int32 `db:"id3" json:"id3"`
-	Id4  int32 `db:"id4" json:"id4"`
-	Map  int32 `db:"map" json:"map"`
-}
-
 type WorldCreatureTemplate struct {
 	Entry              int32       `db:"entry" json:"entry"`
 	DisplayId1         int32       `db:"display_id1" json:"display_id1"`
@@ -1382,32 +1245,6 @@ type WorldCreatureTemplate struct {
 type WorldDisplayInfo struct {
 	ID   int32  `db:"id" json:"id"`
 	Icon string `db:"icon" json:"icon"`
-}
-
-type WorldInstanceTemplate struct {
-	ID           uuid.UUID          `db:"id" json:"id"`
-	Name         string             `db:"name" json:"name"`
-	Abbreviation pgtype.Text        `db:"abbreviation" json:"abbreviation"`
-	Category     InstanceCategory   `db:"category" json:"category"`
-	BossCount    pgtype.Int4        `db:"boss_count" json:"boss_count"`
-	Background   pgtype.Text        `db:"background" json:"background"`
-	CreatedAt    pgtype.Timestamptz `db:"created_at" json:"created_at"`
-	UpdatedAt    pgtype.Timestamptz `db:"updated_at" json:"updated_at"`
-}
-
-type WorldInstanceUnit struct {
-	InstanceID    uuid.UUID       `db:"instance_id" json:"instance_id"`
-	EntryID       int32           `db:"entry_id" json:"entry_id"`
-	OverrideName  pgtype.Text     `db:"override_name" json:"override_name"`
-	EncounterName pgtype.Text     `db:"encounter_name" json:"encounter_name"`
-	Boss          bool            `db:"boss" json:"boss"`
-	Affiliation   UnitAffiliation `db:"affiliation" json:"affiliation"`
-}
-
-type WorldInstanceZoneName struct {
-	InstanceID  uuid.UUID `db:"instance_id" json:"instance_id"`
-	ZoneName    string    `db:"zone_name" json:"zone_name"`
-	DisplayName string    `db:"display_name" json:"display_name"`
 }
 
 type WorldItemEnchantment struct {

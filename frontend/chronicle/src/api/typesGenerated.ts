@@ -205,14 +205,6 @@ export interface AzerothCorePingResponse {
     readonly status: string;
 }
 
-// From chroniclesdk/world_instance.go
-/**
- * BulkUpsertWorldInstanceUnitsRequest is the request body for bulk upserting units.
- */
-export interface BulkUpsertWorldInstanceUnitsRequest {
-    readonly units: readonly WorldInstanceUnit[];
-}
-
 // From chroniclesdk/events.go
 export interface ChronicleEncounterEvents {
     readonly encounter_id: string;
@@ -476,11 +468,6 @@ export interface IdentitySpell {
     readonly spell_id: number;
     readonly count: number;
 }
-
-// From chroniclesdk/world_instance.go
-export type InstanceCategory = "dungeon" | "pvp" | "raid";
-
-export const InstanceCategorys: InstanceCategory[] = ["dungeon", "pvp", "raid"];
 
 // From chroniclesdk/panel_layout.go
 /**
@@ -1252,7 +1239,7 @@ export interface SpeedrunVersionStatus {
     readonly addon_qualified: boolean;
 }
 
-// From chroniclesdk/world_instance.go
+// From chroniclesdk/supported_instance.go
 /**
  * SupportedInstance describes a registered instance with its metadata.
  */
@@ -1265,7 +1252,7 @@ export interface SupportedInstance {
     readonly trash?: readonly SupportedInstanceUnit[];
 }
 
-// From chroniclesdk/world_instance.go
+// From chroniclesdk/supported_instance.go
 /**
  * SupportedInstanceUnit is a hostile creature in a supported instance.
  */
@@ -1281,11 +1268,6 @@ export interface SupportedInstanceUnit {
 export interface TrackLayoutRequest {
     readonly layout_id: string;
 }
-
-// From chroniclesdk/world_instance.go
-export type UnitAffiliation = "friendly" | "hostile" | "neutral" | "unknown" | "vary";
-
-export const UnitAffiliations: UnitAffiliation[] = ["friendly", "hostile", "neutral", "unknown", "vary"];
 
 // From chroniclesdk/log.go
 /**
@@ -1405,19 +1387,6 @@ export interface UpsertRetentionRuleRequest {
     readonly action: string;
     readonly conditions: Record<string, string>;
     readonly description: string;
-}
-
-// From chroniclesdk/world_instance.go
-/**
- * UpsertWorldInstanceTemplateRequest is the request body for creating/updating an instance template.
- */
-export interface UpsertWorldInstanceTemplateRequest {
-    readonly name: string;
-    readonly abbreviation?: string;
-    readonly category: InstanceCategory;
-    readonly boss_count?: number;
-    readonly background?: string;
-    readonly zone_names: readonly WorldInstanceZoneName[];
 }
 
 // From chroniclesdk/user.go
@@ -1735,32 +1704,5 @@ export interface WoWTrailerEntry {
 export type WoWUnitType = 2 | 3 | 1 | 0 | 4;
 
 export const WoWUnitTypes: WoWUnitType[] = [2, 3, 1, 0, 4];
-
-// From chroniclesdk/world_instance.go
-export interface WorldInstanceTemplate {
-    readonly id: string;
-    readonly name: string;
-    readonly abbreviation?: string;
-    readonly category: InstanceCategory;
-    readonly boss_count?: number;
-    readonly background?: string;
-    readonly zone_names: readonly WorldInstanceZoneName[];
-}
-
-// From chroniclesdk/world_instance.go
-export interface WorldInstanceUnit {
-    readonly entry_id: number;
-    readonly name: string; // Resolved: override_name ?? world_creature_template.name ?? "Unknown"
-    readonly override_name?: string;
-    readonly encounter_name?: string;
-    readonly boss: boolean;
-    readonly affiliation: UnitAffiliation;
-}
-
-// From chroniclesdk/world_instance.go
-export interface WorldInstanceZoneName {
-    readonly zone_name: string;
-    readonly display_name: string;
-}
 
 
