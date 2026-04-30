@@ -55,7 +55,6 @@ type State struct {
 	// Friendly/Foe/Relationships, etc.
 	Units *unitdb.Units
 
-	reg              *registry.Registry
 	instanceResolver InstanceResolver
 	verbose          bool
 	timings          *timingAccumulator
