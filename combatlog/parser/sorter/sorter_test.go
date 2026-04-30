@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"math/rand"
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -30,7 +31,7 @@ func TestSortByTimestamp(t *testing.T) {
 
 		logger := testutil.Logger(t)
 		var out bytes.Buffer
-		_, _, err := sorter.SortLogs(t.Context(), logger, strings.NewReader(strings.Join(cpy, "\n")), &out)
+		_, _, err := sorter.SortLogs(t.Context(), logger, strings.NewReader(strings.Join(cpy, "\n")), &out, false)
 		require.NoError(t, err)
 
 		got := removeEmpty(strings.Split(out.String(), "\n"))
@@ -61,7 +62,7 @@ func TestPriorityOrder(t *testing.T) {
 
 		logger := testutil.Logger(t)
 		var out bytes.Buffer
-		_, _, err := sorter.SortLogs(t.Context(), logger, strings.NewReader(strings.Join(cpy, "\n")), &out)
+		_, _, err := sorter.SortLogs(t.Context(), logger, strings.NewReader(strings.Join(cpy, "\n")), &out, false)
 		require.NoError(t, err)
 
 		got := removeEmpty(strings.Split(out.String(), "\n"))
@@ -85,7 +86,7 @@ func TestOriginalOrderPreserved(t *testing.T) {
 	// Without shuffling, order should be preserved
 	logger := testutil.Logger(t)
 	var out bytes.Buffer
-	_, _, err := sorter.SortLogs(t.Context(), logger, strings.NewReader(strings.Join(logs, "\n")), &out)
+	_, _, err := sorter.SortLogs(t.Context(), logger, strings.NewReader(strings.Join(logs, "\n")), &out, false)
 	require.NoError(t, err)
 
 	got := removeEmpty(strings.Split(out.String(), "\n"))
@@ -115,11 +116,88 @@ func TestMixedTimestampsAndPriorities(t *testing.T) {
 
 	logger := testutil.Logger(t)
 	var out bytes.Buffer
-	_, _, err := sorter.SortLogs(t.Context(), logger, strings.NewReader(strings.Join(input, "\n")), &out)
+	_, _, err := sorter.SortLogs(t.Context(), logger, strings.NewReader(strings.Join(input, "\n")), &out, false)
 	require.NoError(t, err)
 
 	got := removeEmpty(strings.Split(out.String(), "\n"))
 	require.Equal(t, expected, got)
+}
+
+// TestSortByTimestamp_EpochMillis verifies that epoch-millis lines sort by timestamp.
+func TestSortByTimestamp_EpochMillis(t *testing.T) {
+	t.Parallel()
+
+	logs := []string{
+		"1777515101755  SPELL_DAMAGE,0x000000000001D2D8,\"Skulkemage\",0x548,0xF130002964000014,\"Mother Smolderweb\",0xa48,10181,\"Frostbolt\",0x10,978,943,16,0,0,0,nil,nil,nil",
+		"1777515101757  SPELL_DAMAGE,0x000000000001D2D8,\"Skulkemage\",0x548,0xF130002964000014,\"Mother Smolderweb\",0xa48,10181,\"Frostbolt\",0x10,500,480,8,0,0,0,nil,nil,nil",
+		"1777515101764  CHRONICLE_ENCOUNTER_CREDIT,229,45,0,10596,0,270,\"Mother Smolderweb\",0,0xF130002964000014,\"Mother Smolderweb\"",
+		"1777515101800  SPELL_CAST_SUCCESS,0xF130002388000170,\"Rage Talon Dragonspawn\",0xa18,0xF130002388000170,\"Rage Talon Dragonspawn\",0xa18,8876,\"Thrash\",0x1",
+	}
+
+	for i := 0; i < 10; i++ {
+		cpy := slices.Clone(logs)
+		rand.Shuffle(len(cpy), func(i, j int) { cpy[i], cpy[j] = cpy[j], cpy[i] })
+
+		logger := testutil.Logger(t)
+		var out bytes.Buffer
+		_, _, err := sorter.SortLogs(t.Context(), logger, strings.NewReader(strings.Join(cpy, "\n")), &out, true)
+		require.NoError(t, err)
+
+		got := removeEmpty(strings.Split(out.String(), "\n"))
+		require.Equal(t, logs, got)
+	}
+}
+
+// TestPriorityOrder_EpochMillis verifies AzerothCore meta-event priority ordering.
+func TestPriorityOrder_EpochMillis(t *testing.T) {
+	t.Parallel()
+
+	// All lines share the same timestamp — order determined by priority.
+	logs := []string{
+		`1777515068242  CHRONICLE_HEADER,"","3.3.5a",12340`,
+		`1777515068242  CHRONICLE_ZONE_INFO,"Blackrock Spire",229,45,"party"`,
+		`1777515068242  CHRONICLE_UNIT_INFO,0xF130002388000170,"Rage Talon Dragonspawn",59,0xa28,0x0000000000000000,5707,"NEUTRAL",false`,
+		`1777515068242  SPELL_CAST_SUCCESS,0xF130002388000170,"Rage Talon Dragonspawn",0xa18,0xF130002388000170,"Rage Talon Dragonspawn",0xa18,8876,"Thrash",0x1`,
+	}
+
+	for i := 0; i < 10; i++ {
+		cpy := slices.Clone(logs)
+		rand.Shuffle(len(cpy), func(i, j int) { cpy[i], cpy[j] = cpy[j], cpy[i] })
+
+		logger := testutil.Logger(t)
+		var out bytes.Buffer
+		_, _, err := sorter.SortLogs(t.Context(), logger, strings.NewReader(strings.Join(cpy, "\n")), &out, true)
+		require.NoError(t, err)
+
+		got := removeEmpty(strings.Split(out.String(), "\n"))
+		require.Equal(t, logs, got)
+	}
+}
+
+// TestEpochMillisRoundTrip verifies output preserves epoch-millis format.
+func TestEpochMillisRoundTrip(t *testing.T) {
+	t.Parallel()
+
+	input := []string{
+		`1777515068242  CHRONICLE_HEADER,"","3.3.5a",12340`,
+		`1777515101755  SPELL_DAMAGE,0x000000000001D2D8,"Skulkemage",0x548`,
+	}
+
+	logger := testutil.Logger(t)
+	var out bytes.Buffer
+	_, _, err := sorter.SortLogs(t.Context(), logger, strings.NewReader(strings.Join(input, "\n")), &out, true)
+	require.NoError(t, err)
+
+	got := removeEmpty(strings.Split(out.String(), "\n"))
+	require.Equal(t, input, got)
+
+	// Verify lines start with numeric epoch timestamps, not date format.
+	for _, line := range got {
+		parts := strings.SplitN(line, "  ", 2)
+		require.Len(t, parts, 2)
+		_, err := strconv.ParseInt(parts[0], 10, 64)
+		require.NoError(t, err, "expected epoch-millis timestamp in output")
+	}
 }
 
 func removeEmpty(lines []string) []string {

@@ -1,6 +1,8 @@
 package creatures
 
 import (
+	"time"
+
 	"github.com/Emyrk/chronicle/combatlog/parser/common/characters"
 	"github.com/Emyrk/chronicle/combatlog/parser/common/characters/period"
 	"github.com/Emyrk/chronicle/combatlog/parser/guid"
@@ -8,16 +10,22 @@ import (
 )
 
 type LogBased struct {
-	*characters.Base[*period.EmptyPeriod]
+	*characters.Base[*period.InactivityPeriod]
 }
 
 func NewLogBasedCharacter(id guid.GUID, all *characters.Characters) *LogBased {
 	return &LogBased{
-		Base: characters.NewBaseCharacter[*period.EmptyPeriod](id, all),
+		Base: characters.NewBaseCharacter[*period.InactivityPeriod](id, all),
 	}
 }
 
 func (c *LogBased) Process(m messages.Message) error {
+	// Timeouts should be checked on every timestamp
+	cur, ok := c.Activity.Current()
+	if ok {
+		cur.HandleTimeout(m.Date())
+	}
+
 	switch msg := m.(type) {
 	case *messages.UnitCombatEnter:
 		if msg.VictimGUID == c.ID() {
@@ -46,7 +54,7 @@ func (c *LogBased) Process(m messages.Message) error {
 
 func (c *LogBased) Start(reason string, m messages.Message) {
 	c.Activity.Start(
-		period.NewEmptyPeriod(c.ID()),
+		period.NewInactivityPeriod(c.ID(), time.Minute),
 		reason, m,
 	)
 }

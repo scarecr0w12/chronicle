@@ -35,7 +35,10 @@ func New(reg *registry.Registry) *ZoneDetector {
 // ProcessMessages scans messages for creature GUIDs that belong to a known
 // instance. When a new zone is detected, a synthetic Zone message is prepended.
 func (zd *ZoneDetector) ProcessMessages(msgs []messages.Message) []messages.Message {
-	for _, msg := range msgs {
+	if zd == nil {
+    return msgs
+  }
+  for _, msg := range msgs {
 		for _, g := range msg.Affects() {
 			entry, ok := g.GetEntry()
 			if !ok {

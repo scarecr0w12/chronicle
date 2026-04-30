@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"compress/gzip"
 	"context"
-	"encoding/json"
-	"reflect"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"log/slog"
+	"reflect"
 
 	"github.com/Emyrk/chronicle/chronicle/regression"
 	"github.com/Emyrk/chronicle/chronicle/riverqueue"
@@ -20,9 +20,9 @@ import (
 	"github.com/Emyrk/chronicle/combatlog/parser/vanilla/state/encounters/instances"
 	"github.com/Emyrk/chronicle/database"
 	"github.com/Emyrk/chronicle/internal/leveledlog"
-	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/Emyrk/chronicle/internal/version"
 	"github.com/google/uuid"
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/riverqueue/river"
 	"github.com/riverqueue/river/rivertype"
 )
@@ -111,7 +111,7 @@ func (w *WorkerRegressionSnapshot) Work(ctx context.Context, job *river.Job[Args
 	}
 
 	// 3. Parse the combat log
-	encountersState := encounters.New(ctx, logger)
+	encountersState := encounters.New(ctx, logger, nil)
 	c := consumers.New(logger, encountersState)
 
 	var consumeErr error

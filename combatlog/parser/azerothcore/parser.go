@@ -15,7 +15,6 @@ import (
 	"github.com/Emyrk/chronicle/combatlog/parser/types/zone"
 	parservanilla "github.com/Emyrk/chronicle/combatlog/parser/vanilla"
 	"github.com/Emyrk/chronicle/combatlog/parser/vanilla/messages"
-	"github.com/Emyrk/chronicle/combatlog/parser/vanilla/state/encounters/registry"
 	"github.com/Emyrk/chronicle/combatlog/parser/wotlk"
 	"github.com/Emyrk/chronicle/database/gamedb"
 	"github.com/Emyrk/chronicle/database/gamedb/chrondbc"
@@ -33,8 +32,8 @@ type Parser struct {
 
 // New creates an AzerothCore parser that wraps a WotLK parser with unix
 // millisecond timestamps enabled and CHRONICLE_* event handling.
-func New(ctx context.Context, logger *slog.Logger, r io.Reader, wowDB gamedb.GameDB, gear gamedb.GearResolver, reg *registry.Registry) (*Parser, error) {
-	inner, err := wotlk.New(ctx, logger, r, wowDB, gear, reg)
+func New(ctx context.Context, logger *slog.Logger, r io.Reader, wowDB gamedb.GameDB, gear gamedb.GearResolver) (*Parser, error) {
+	inner, err := wotlk.New(ctx, logger, r, wowDB, gear, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -268,26 +267,39 @@ func (p *Parser) parseUnitCombat(ts time.Time, m *wotlk.Matched, _ string) ([]me
 
 // parseUnitInfo converts a CHRONICLE_UNIT_INFO line into a messages.Unit.
 //
-// Fields: guid, "name", level, unitFlags (hex, currently always 0x0), ownerGuid, maxHealth
+// Fields: guid, "name", level, unitFlags (hex), ownerGuid, maxHealth, "affiliation", boss
 func (p *Parser) parseUnitInfo(ts time.Time, m *wotlk.Matched, _ string) ([]messages.Message, error) {
 	id := m.Guid()
 	name := m.String()
 	level := m.Int32()
 	_ = m.HexUint32() // unitFlags — currently always 0, use GUID for player detection
 	owner := m.OptionalGuid()
-	_ = m.Int32() // maxHealth — consume to advance cursor, unitinfo.Info has no field for it
+	maxHealth := m.Int64()
+	affiliation := m.String()
+	bossStr := m.String()
 
 	if m.Error() != nil {
 		p.logger.Warn("failed to parse CHRONICLE_UNIT_INFO", "error", m.Error())
 		return nil, nil
 	}
 
+	aff := types.AffiliationUnknown
+	switch strings.Trim(strings.ToLower(affiliation), `"`) {
+	case "hostile":
+		aff = types.AffiliationHostile
+	case "friendly":
+		aff = types.AffiliationFriendly
+	}
+
 	info := unitinfo.Info{
-		Seen:     ts,
-		Guid:     id,
-		IsPlayer: id.IsPlayer(),
-		Name:     name,
-		Level:    level,
+		Seen:        ts,
+		Guid:        id,
+		IsPlayer:    id.IsPlayer(),
+		Name:        name,
+		Level:       level,
+		Affiliation: aff,
+		Boss:        bossStr == "true",
+		MaxHealth:   maxHealth,
 	}
 	if owner != nil && !owner.IsZero() {
 		info.Owner = owner

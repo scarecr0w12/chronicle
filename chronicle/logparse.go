@@ -22,6 +22,7 @@ import (
 	"github.com/Emyrk/chronicle/combatlog/consumers"
 	"github.com/Emyrk/chronicle/combatlog/parseoptions"
 	"github.com/Emyrk/chronicle/combatlog/parser/azerothcore"
+	azencounters "github.com/Emyrk/chronicle/combatlog/parser/azerothcore/encounters"
 	"github.com/Emyrk/chronicle/combatlog/parser/common/characters/period"
 	"github.com/Emyrk/chronicle/combatlog/parser/common/parsectx"
 	"github.com/Emyrk/chronicle/combatlog/parser/guid"
@@ -144,7 +145,7 @@ func (w *WorkerLogParse) loadAndSortFile(ctx context.Context, file database.LogF
 	}
 
 	fileData := &bytes.Buffer{}
-	sum, ri, err := sorter.SortLogs(ctx, logger, rdr, fileData)
+	sum, ri, err := sorter.SortLogs(ctx, logger, rdr, fileData, false)
 	if err != nil {
 		return nil, ri, fmt.Errorf("sort log file %s: %w", file.ID, err)
 	}
@@ -214,7 +215,11 @@ func (w *WorkerLogParse) Work(ctx context.Context, job *river.Job[ArgsLogParse])
 	var encountersState *encounters.State
 	reg := w.parent.Registry()
 
-	encountersState = encounters.New(ctx, logLogger, reg)
+	if logGroup.WoWLogGroup.LogType == database.LogTypeAzerothcore {
+		encountersState = azencounters.New(ctx, logLogger)
+	} else {
+		encountersState = encounters.New(ctx, logLogger, reg)
+	}
 
 	// Parse combat log - branch based on log type
 	parseStart := time.Now()
@@ -338,7 +343,7 @@ func (w *WorkerLogParse) Work(ctx context.Context, job *river.Job[ArgsLogParse])
 		report.LoadFileDuration = chroniclesdk.DurationFrom(loadDuration)
 		metrics.loadFileDuration.Observe(loadDuration.Seconds())
 
-		p, err := azerothcore.New(ctx, logLogger, rdr, w.parent.WoWDB, w.parent.ItemFetcher, reg)
+		p, err := azerothcore.New(ctx, logLogger, rdr, w.parent.WoWDB, w.parent.ItemFetcher)
 		if err != nil {
 			jobResult = "failure"
 			return fmt.Errorf("create azerothcore parser: %w", err)

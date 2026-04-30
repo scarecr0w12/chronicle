@@ -82,7 +82,7 @@ func ParseV2Cmd() *serpent.Command {
 				return fmt.Errorf("creating parser: %w", err)
 			}
 
-			output := encounters.New(ctx, logger)
+			output := encounters.New(ctx, logger, nil)
 			c := consumers.New(logger, output)
 			err = c.ConsumeAll(ctx, p)
 			if err != nil {
@@ -161,7 +161,7 @@ func ParseCmd() *serpent.Command {
 			}
 
 			p := vanilla.NewFromScanner(logger, liner, scan, nil)
-			output := encounters.New(ctx, logger)
+			output := encounters.New(ctx, logger, nil)
 			c := consumers.New(logger, output)
 			err = c.ConsumeAll(ctx, p)
 			if err != nil {
@@ -245,13 +245,13 @@ func CreaturesCmd() *serpent.Command {
 			} else {
 				// v1 parser with merging for two files
 				fileOne := &bytes.Buffer{}
-				sum, ri1, err := sorter.SortLogs(ctx, logger, files[0], fileOne)
+				sum, ri1, err := sorter.SortLogs(ctx, logger, files[0], fileOne, false)
 				if err != nil {
 					return fmt.Errorf("sorting logs: %w", err)
 				}
 
 				fileTwo := &bytes.Buffer{}
-				sum2, ri2, err := sorter.SortLogs(ctx, logger, files[1], fileTwo)
+				sum2, ri2, err := sorter.SortLogs(ctx, logger, files[1], fileTwo, false)
 				if err != nil {
 					return fmt.Errorf("sorting logs: %w", err)
 				}

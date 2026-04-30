@@ -15,6 +15,7 @@ import (
 func SortCmd() *serpent.Command {
 	var (
 		outputPath string
+		azcore     bool
 	)
 
 	cmd := &serpent.Command{
@@ -26,6 +27,12 @@ func SortCmd() *serpent.Command {
 				Flag:          "output",
 				FlagShorthand: "o",
 				Value:         serpent.StringOf(&outputPath),
+			},
+			{
+				Name:        "AzerothCore",
+				Description: "Use AzerothCore log format (epoch millisecond timestamps).",
+				Flag:        "azcore",
+				Value:       serpent.BoolOf(&azcore),
 			},
 		},
 		Handler: func(i *serpent.Invocation) error {
@@ -58,7 +65,7 @@ func SortCmd() *serpent.Command {
 				}
 			}
 
-			smry, _, err := sorter.SortLogs(ctx, logger, files[0], outFile)
+			smry, _, err := sorter.SortLogs(ctx, logger, files[0], outFile, azcore)
 			if err != nil {
 				return fmt.Errorf("sorting logs: %w", err)
 			}

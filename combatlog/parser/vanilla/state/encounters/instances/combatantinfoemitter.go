@@ -11,13 +11,13 @@ import (
 )
 
 // Verify interface compliance.
-var _ instancehook.Hook = (*combatantInfoEmitter)(nil)
-var _ characters.SetHook = (*combatantInfoEmitter)(nil)
+var _ instancehook.Hook = (*CombatantInfoEmitter)(nil)
+var _ characters.SetHook = (*CombatantInfoEmitter)(nil)
 
-// combatantInfoEmitter injects Combatant messages into the current fight's
+// CombatantInfoEmitter injects Combatant messages into the current fight's
 // event builder when a fight starts, snapshotting each active player's gear,
 // talents, and other COMBATANT_INFO data.
-type combatantInfoEmitter struct {
+type CombatantInfoEmitter struct {
 	instancehook.BaseHook
 
 	armory     *armory.Tracker
@@ -26,7 +26,7 @@ type combatantInfoEmitter struct {
 }
 
 // characters.SetHook — emit combatant info when a player becomes active mid-fight.
-func (ce *combatantInfoEmitter) ActivityChange(m messages.Message, chars ...characters.Character) {
+func (ce *CombatantInfoEmitter) ActivityChange(m messages.Message, chars ...characters.Character) {
 	for _, c := range chars {
 		if !c.IsActive() || !c.ID().IsPlayer() {
 			continue
@@ -43,25 +43,25 @@ func (ce *combatantInfoEmitter) ActivityChange(m messages.Message, chars ...char
 }
 
 // characters.SetHook — no-op.
-func (ce *combatantInfoEmitter) CharacterAdded(_ messages.Message, _ ...characters.Character) {}
+func (ce *CombatantInfoEmitter) CharacterAdded(_ messages.Message, _ ...characters.Character) {}
 
 // instancehook.Hook — no-op for messages (armory tracker handles COMBATANT_INFO).
-func (ce *combatantInfoEmitter) ProcessMessage(_ bool, _ uuid.UUID, _ messages.Message) error {
+func (ce *CombatantInfoEmitter) ProcessMessage(_ bool, _ uuid.UUID, _ messages.Message) error {
 	return nil
 }
 
 // instancehook.Hook
-func (ce *combatantInfoEmitter) Finalize(_ context.Context) error { return nil }
+func (ce *CombatantInfoEmitter) Finalize(_ context.Context) error { return nil }
 
 // instancehook.Hook — emit combatant info for all active players when a fight starts.
-func (ce *combatantInfoEmitter) FightStarted(_ uuid.UUID, m messages.Message) {
+func (ce *CombatantInfoEmitter) FightStarted(_ uuid.UUID, m messages.Message) {
 	ce.emitAllActive(m)
 }
 
 // instancehook.Hook — no-op on fight end (gear snapshot at start is sufficient).
-func (ce *combatantInfoEmitter) FightEnded(_ uuid.UUID, _ messages.Message) {}
+func (ce *CombatantInfoEmitter) FightEnded(_ uuid.UUID, _ messages.Message) {}
 
-func (ce *combatantInfoEmitter) emitAllActive(m messages.Message) {
+func (ce *CombatantInfoEmitter) emitAllActive(m messages.Message) {
 	_ = ce.characters.All.ForEach(func(char characters.Character) error {
 		if !char.IsActive() || !char.ID().IsPlayer() {
 			return nil

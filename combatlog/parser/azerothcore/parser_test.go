@@ -216,7 +216,7 @@ func TestZulFarrakBossEncounterRegression(t *testing.T) {
 		fmt.Sprintf(`1777340512000  UNIT_DIED,0x0000000000000000,nil,0x80000000,0x%016X,"Theka the Martyr",0xa48`, uint64(bossGUID)),
 	}, "\n")
 
-	p, err := New(ctx, slog.Default(), strings.NewReader(logData), stubSpellDB{}, nil, reg)
+	p, err := New(ctx, slog.Default(), strings.NewReader(logData), stubSpellDB{}, nil)
 	require.NoError(t, err)
 
 	output := encounters.New(ctx, slog.Default(), reg)

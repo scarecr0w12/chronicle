@@ -6,7 +6,7 @@ import (
 	"github.com/Emyrk/chronicle/combatlog/parser/vanilla/state/encounters/creatures"
 )
 
-func WoTLKCharacterFactories() []characters.CharacterFactory {
+func AzerothCoreCharacterFactories() []characters.CharacterFactory {
 	return []characters.CharacterFactory{
 		// Global
 		creatures.NewTotemCharacter,

@@ -47,14 +47,14 @@ func New(ctx context.Context, logger *slog.Logger, r io.Reader, wowDB gamedb.Gam
 	}
 	gn := NewGUIDNames()
 	return &Parser{
-		eventHook:    map[string]func(ts time.Time, m *Matched, raw string) ([]messages.Message, error){},
-		logger:       logger,
-		wowDB:        wowDB,
-		scanner:      bufio.NewScanner(r),
-		guidNames:    gn,
-		synthetics:   synthetic.New(ctx, logger, wowDB, reg, gn),
-		itemFetcher:  gear,
-		baseYear:     time.Now().Year(),
+		eventHook:   map[string]func(ts time.Time, m *Matched, raw string) ([]messages.Message, error){},
+		logger:      logger,
+		wowDB:       wowDB,
+		scanner:     bufio.NewScanner(r),
+		guidNames:   gn,
+		synthetics:  synthetic.New(ctx, logger, wowDB, reg, gn),
+		itemFetcher: gear,
+		baseYear:    time.Now().Year(),
 		metrics: parservanilla.Metrics{
 			MatchingTime:   make(map[string]time.Duration),
 			UnmatchingTime: make(map[string]time.Duration),
@@ -160,7 +160,8 @@ func (p *Parser) advance(_ context.Context) (_ []messages.Message, final error) 
 	}
 
 	if !p.lastDate.IsZero() && ts.Before(p.lastDate.Add(-time.Second)) {
-		return nil, parseerrors.AsFatalError(fmt.Errorf("log dates went backwards: last %v, current %v", p.lastDate, ts))
+		diff := ts.Sub(p.lastDate)
+		return nil, parseerrors.AsFatalError(fmt.Errorf("log dates went backwards by %s: last %v, current %v", diff.String(), p.lastDate, ts))
 	}
 	p.lastDate = ts
 

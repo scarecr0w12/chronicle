@@ -33,18 +33,23 @@ type Synthetic struct {
 }
 
 func New(ctx context.Context, logger *slog.Logger, wowDB gamedb.GameDB, reg *registry.Registry, names NameResolver) *Synthetic {
+	var zd *zonedetector.ZoneDetector
+	if reg != nil {
+		zonedetector.New(reg)
+	}
+
 	return &Synthetic{
 		logger:       logger,
 		wowDB:        wowDB,
 		unitInfo:     newUnitInfo(ctx, logger, wowDB, names, wowDB),
-		zoneDetector: zonedetector.New(reg),
+		zoneDetector: zd,
 	}
 }
 
 func (s *Synthetic) DetailedTimes() map[string]time.Duration {
 	return map[string]time.Duration{
-		"parser.synthetic.unit_info":      s.unitInfoDur,
-		"parser.synthetic.zone_detector":  s.zoneDetectorDur,
+		"parser.synthetic.unit_info":     s.unitInfoDur,
+		"parser.synthetic.zone_detector": s.zoneDetectorDur,
 	}
 }
 
@@ -53,9 +58,11 @@ func (s *Synthetic) ProcessMessages(msgs []messages.Message) ([]messages.Message
 	msgs = s.unitInfo.ProcessMessages(msgs)
 	s.unitInfoDur += time.Since(now)
 
-	now = time.Now()
-	msgs = s.zoneDetector.ProcessMessages(msgs)
-	s.zoneDetectorDur += time.Since(now)
+	if s.zoneDetector != nil {
+		now = time.Now()
+		msgs = s.zoneDetector.ProcessMessages(msgs)
+		s.zoneDetectorDur += time.Since(now)
+	}
 
 	return msgs, nil
 }

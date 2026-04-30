@@ -12,12 +12,12 @@ import (
 )
 
 // Verify interface compliance.
-var _ instancehook.Hook = (*classificationEmitter)(nil)
-var _ characters.SetHook = (*classificationEmitter)(nil)
+var _ instancehook.Hook = (*ClassificationEmitter)(nil)
+var _ characters.SetHook = (*ClassificationEmitter)(nil)
 
-// classificationEmitter injects UnitClassificationEvent messages into the
+// ClassificationEmitter injects UnitClassificationEvent messages into the
 // current fight's event builder when unit affiliations change.
-type classificationEmitter struct {
+type ClassificationEmitter struct {
 	instancehook.BaseHook
 
 	units      *unitdb.Units
@@ -26,17 +26,17 @@ type classificationEmitter struct {
 }
 
 // characters.SetHook — fires when a character becomes active or inactive.
-func (ce *classificationEmitter) ActivityChange(m messages.Message, chars ...characters.Character) {
+func (ce *ClassificationEmitter) ActivityChange(m messages.Message, chars ...characters.Character) {
 	for _, c := range chars {
 		ce.emitClassification(c.ID(), m)
 	}
 }
 
 // characters.SetHook — no-op.
-func (ce *classificationEmitter) CharacterAdded(_ messages.Message, _ ...characters.Character) {}
+func (ce *ClassificationEmitter) CharacterAdded(_ messages.Message, _ ...characters.Character) {}
 
 // instancehook.Hook — detect possession changes.
-func (ce *classificationEmitter) ProcessMessage(active bool, _ uuid.UUID, m messages.Message) error {
+func (ce *ClassificationEmitter) ProcessMessage(active bool, _ uuid.UUID, m messages.Message) error {
 	switch msg := m.(type) {
 	case *messages.PossessionChange:
 		ce.emitClassification(msg.Target, m)
@@ -47,19 +47,19 @@ func (ce *classificationEmitter) ProcessMessage(active bool, _ uuid.UUID, m mess
 }
 
 // instancehook.Hook
-func (ce *classificationEmitter) Finalize(_ context.Context) error { return nil }
+func (ce *ClassificationEmitter) Finalize(_ context.Context) error { return nil }
 
 // instancehook.Hook — classify all active characters when a fight starts.
-func (ce *classificationEmitter) FightStarted(_ uuid.UUID, m messages.Message) {
+func (ce *ClassificationEmitter) FightStarted(_ uuid.UUID, m messages.Message) {
 	ce.emitAllActive(m)
 }
 
 // instancehook.Hook — classify all active characters when a fight ends.
-func (ce *classificationEmitter) FightEnded(_ uuid.UUID, m messages.Message) {
+func (ce *ClassificationEmitter) FightEnded(_ uuid.UUID, m messages.Message) {
 	ce.emitAllActive(m)
 }
 
-func (ce *classificationEmitter) emitClassification(target guid.GUID, m messages.Message) {
+func (ce *ClassificationEmitter) emitClassification(target guid.GUID, m messages.Message) {
 	c := ce.units.Classify(target)
 	evt := &messages.UnitClassificationEvent{
 		MessageBase: messages.Base(m.Date()),
@@ -77,7 +77,7 @@ func (ce *classificationEmitter) emitClassification(target guid.GUID, m messages
 	ce.emit(evt)
 }
 
-func (ce *classificationEmitter) emitAllActive(m messages.Message) {
+func (ce *ClassificationEmitter) emitAllActive(m messages.Message) {
 	_ = ce.characters.All.ForEach(func(char characters.Character) error {
 		if char.IsActive() {
 			ce.emitClassification(char.ID(), m)

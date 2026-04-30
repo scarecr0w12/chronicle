@@ -36,6 +36,14 @@ type Info struct {
 	Level        int32
 	Challenges   []string
 	Charm        *guid.GUID
+	MaxHealth    int64
+
+	// Affiliation is the unit's hostility relative to the player.
+	// Set by AzerothCore's CHRONICLE_UNIT_INFO; empty for vanilla addon logs.
+	Affiliation types.Affiliation
+	// Boss indicates the unit is a boss-level creature.
+	// Set by AzerothCore's CHRONICLE_UNIT_INFO.
+	Boss bool
 }
 
 // TODO:

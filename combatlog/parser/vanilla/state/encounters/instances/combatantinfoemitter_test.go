@@ -33,7 +33,7 @@ func TestCombatantInfoEmitter_FightStarted(t *testing.T) {
 	chars := characters.NewCharacters(units, creatures.TurtleCharacterFactories())
 
 	var emitted []*messages.Combatant
-	cie := &combatantInfoEmitter{
+	cie := &CombatantInfoEmitter{
 		armory:     tracker,
 		characters: chars,
 		emit: func(evt *messages.Combatant) {
@@ -73,7 +73,7 @@ func TestCombatantInfoEmitter_NoDataInArmory(t *testing.T) {
 	chars := characters.NewCharacters(units, creatures.TurtleCharacterFactories())
 
 	var emitted []*messages.Combatant
-	cie := &combatantInfoEmitter{
+	cie := &CombatantInfoEmitter{
 		armory:     tracker,
 		characters: chars,
 		emit: func(evt *messages.Combatant) {

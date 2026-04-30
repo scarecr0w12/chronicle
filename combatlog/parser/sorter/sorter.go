@@ -6,6 +6,8 @@ import (
 	"io"
 	"log/slog"
 	"slices"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/Emyrk/chronicle/combatlog/parser/lines"
@@ -13,6 +15,7 @@ import (
 	"github.com/Emyrk/chronicle/combatlog/parser/types/realmclock"
 	"github.com/Emyrk/chronicle/combatlog/parser/types/unitinfo"
 	"github.com/Emyrk/chronicle/combatlog/parser/types/zone"
+	"github.com/Emyrk/chronicle/combatlog/parser/wotlk"
 )
 
 type SortSummary struct {
@@ -29,7 +32,9 @@ type logLine struct {
 }
 
 // SortLogs reads log lines from input, sorts them by timestamp, and writes them to output.
-func SortLogs(ctx context.Context, logger *slog.Logger, input io.Reader, output io.Writer) (SortSummary, *realmclock.Info, error) {
+// When useUnixMillis is true, lines are parsed using AzerothCore's epoch-millisecond
+// timestamp format (via wotlk.ExtractUnixMilli) instead of the vanilla date format.
+func SortLogs(ctx context.Context, logger *slog.Logger, input io.Reader, output io.Writer, useUnixMillis bool) (SortSummary, *realmclock.Info, error) {
 	sum := SortSummary{}
 	buffer := make([]logLine, 0)
 	var firstRealmClock *realmclock.Info
@@ -44,13 +49,20 @@ func SortLogs(ctx context.Context, logger *slog.Logger, input io.Reader, output 
 		}
 
 		txt := sc.Text()
-		ts, content, err := liner.Line(txt)
+		var ts time.Time
+		var content string
+		var err error
+		if useUnixMillis {
+			ts, content, err = wotlk.ExtractUnixMilli(txt)
+		} else {
+			ts, content, err = liner.Line(txt)
+		}
 		if err != nil {
 			logger.Warn("skipping failed line", slog.String("line", txt), slog.String("error", err.Error()))
 			continue
 		}
 
-		if _, ok := unitinfo.IsUnitInfo(content); ok {
+		if isUnitLike(content) {
 			sum.IsRaw = true
 		}
 
@@ -78,9 +90,10 @@ func SortLogs(ctx context.Context, logger *slog.Logger, input io.Reader, output 
 	}
 
 	// Sort primarily by timestamp. Then prioritize:
-	// 1. Zone info lines, zone changes context for everything else
-	// 2. Unit info lines, unit db should be poplulated asap
-	// 3. Combatant lines, same idea as above
+	// 1. Clock/header info lines
+	// 2. Zone info lines, zone changes context for everything else
+	// 3. Unit info lines, unit db should be populated asap
+	// 4. Combatant lines, same idea as above
 	// Finally, keep the original order for lines with identical timestamps and types
 	slices.SortFunc(buffer, func(a, b logLine) int {
 		am, bm := a.Date.UnixMilli(), b.Date.UnixMilli()
@@ -88,23 +101,17 @@ func SortLogs(ctx context.Context, logger *slog.Logger, input io.Reader, output 
 			return int(am - bm)
 		}
 
-		_, acl := realmclock.IsClockInfo(a.Content)
-		_, bcl := realmclock.IsClockInfo(b.Content)
-		clc := compareBooleans(acl, bcl)
+		clc := compareBooleans(isClockLike(a.Content), isClockLike(b.Content))
 		if clc != 0 {
 			return clc
 		}
 
-		_, az := zone.IsZoneInfo(a.Content)
-		_, bz := zone.IsZoneInfo(b.Content)
-		cz := compareBooleans(az, bz)
+		cz := compareBooleans(isZoneLike(a.Content), isZoneLike(b.Content))
 		if cz != 0 {
 			return cz
 		}
 
-		_, au := unitinfo.IsUnitInfo(a.Content)
-		_, bu := unitinfo.IsUnitInfo(b.Content)
-		cu := compareBooleans(au, bu)
+		cu := compareBooleans(isUnitLike(a.Content), isUnitLike(b.Content))
 		if cu != 0 {
 			return cu
 		}
@@ -119,8 +126,9 @@ func SortLogs(ctx context.Context, logger *slog.Logger, input io.Reader, output 
 		return int(a.idx - b.idx)
 	})
 
-	// First thing we do is insert some heading logs
-	if len(buffer) > 0 && firstRealmClock != nil {
+	// First thing we do is insert some heading logs (vanilla format only —
+	// AzerothCore timestamps are already absolute, no realm clock needed).
+	if !useUnixMillis && len(buffer) > 0 && firstRealmClock != nil {
 		_, _ = output.Write([]byte(
 			// Knock some time off the first to guarantee it's first
 			liner.FmtLine(
@@ -136,7 +144,13 @@ func SortLogs(ctx context.Context, logger *slog.Logger, input io.Reader, output 
 			return sum, firstRealmClock, ctx.Err()
 		}
 
-		_, err := output.Write([]byte(liner.FmtLine(line.Date, line.Content)))
+		var formatted string
+		if useUnixMillis {
+			formatted = strconv.FormatInt(line.Date.UnixMilli(), 10) + "  " + line.Content
+		} else {
+			formatted = liner.FmtLine(line.Date, line.Content)
+		}
+		_, err := output.Write([]byte(formatted))
 		if err != nil {
 			return sum, firstRealmClock, err
 		}
@@ -144,6 +158,24 @@ func SortLogs(ctx context.Context, logger *slog.Logger, input io.Reader, output 
 	}
 
 	return sum, firstRealmClock, nil
+}
+
+// isClockLike returns true for vanilla CLOCK_INFO or AzerothCore CHRONICLE_HEADER lines.
+func isClockLike(s string) bool {
+	_, ok := realmclock.IsClockInfo(s)
+	return ok || strings.HasPrefix(s, "CHRONICLE_HEADER,")
+}
+
+// isZoneLike returns true for vanilla ZONE_INFO or AzerothCore CHRONICLE_ZONE_INFO lines.
+func isZoneLike(s string) bool {
+	_, ok := zone.IsZoneInfo(s)
+	return ok || strings.HasPrefix(s, "CHRONICLE_ZONE_INFO,")
+}
+
+// isUnitLike returns true for vanilla UNIT_INFO or AzerothCore CHRONICLE_UNIT_INFO lines.
+func isUnitLike(s string) bool {
+	_, ok := unitinfo.IsUnitInfo(s)
+	return ok || strings.HasPrefix(s, "CHRONICLE_UNIT_INFO,")
 }
 
 func compareBooleans(a, b bool) int {

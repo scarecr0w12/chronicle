@@ -32,7 +32,7 @@ func TestClassificationEmitter_PossessionChange(t *testing.T) {
 	units.Update(unitinfo.Info{Guid: creatureGUID, CanCooperate: false})
 
 	var emitted []*messages.UnitClassificationEvent
-	ce := &classificationEmitter{
+	ce := &ClassificationEmitter{
 		units: units,
 		emit: func(evt *messages.UnitClassificationEvent) {
 			emitted = append(emitted, evt)
@@ -87,7 +87,7 @@ func TestClassificationEmitter_EmitsRegardlessOfFightState(t *testing.T) {
 	units.Update(unitinfo.Info{Guid: creatureGUID, CanCooperate: false})
 
 	var emitted []*messages.UnitClassificationEvent
-	ce := &classificationEmitter{
+	ce := &ClassificationEmitter{
 		units: units,
 		emit: func(evt *messages.UnitClassificationEvent) {
 			emitted = append(emitted, evt)
@@ -119,7 +119,7 @@ func TestClassificationEmitter_NewOwner(t *testing.T) {
 	units.Update(unitinfo.Info{Guid: creatureGUID, CanCooperate: true})
 
 	var emitted []*messages.UnitClassificationEvent
-	ce := &classificationEmitter{
+	ce := &ClassificationEmitter{
 		units: units,
 		emit: func(evt *messages.UnitClassificationEvent) {
 			emitted = append(emitted, evt)

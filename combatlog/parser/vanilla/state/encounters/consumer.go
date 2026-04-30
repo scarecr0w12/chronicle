@@ -9,6 +9,7 @@ import (
 
 	"github.com/Emyrk/chronicle/combatlog/parseoptions"
 	"github.com/Emyrk/chronicle/combatlog/parser/types/realm"
+	"github.com/Emyrk/chronicle/combatlog/parser/types/zone"
 	"github.com/Emyrk/chronicle/combatlog/parser/vanilla/messages"
 	"github.com/Emyrk/chronicle/combatlog/parser/vanilla/state/encounters/instances"
 	"github.com/Emyrk/chronicle/combatlog/parser/vanilla/state/encounters/registry"
@@ -36,6 +37,10 @@ func (t *timingAccumulator) Snapshot() map[string]time.Duration {
 	return maps.Clone(t.data)
 }
 
+// InstanceResolver creates a Hookable for a given zone. The default
+// implementation delegates to registry.Registry.GetInstance.
+type InstanceResolver func(verbose bool, z zone.Zone, db *unitdb.Units) *instances.Hookable
+
 type State struct {
 	logger *slog.Logger
 
@@ -50,25 +55,20 @@ type State struct {
 	// Friendly/Foe/Relationships, etc.
 	Units *unitdb.Units
 
-	reg     *registry.Registry
-	verbose bool
-	timings *timingAccumulator
+	reg              *registry.Registry
+	instanceResolver InstanceResolver
+	verbose          bool
+	timings          *timingAccumulator
 }
 
-func New(ctx context.Context, logger *slog.Logger, reg ...*registry.Registry) *State {
-	var r *registry.Registry
-	if len(reg) > 0 && reg[0] != nil {
-		r = reg[0]
-	} else {
-		r = registry.DefaultRegistry(logger)
-	}
+func NewWithInstanceResolver(ctx context.Context, logger *slog.Logger, res InstanceResolver) *State {
 	s := &State{
-		logger:      logger,
-		Units:       unitdb.New(),
-		CurrentZone: zoner.NewLocation(),
-		reg:         r,
-		Instances:   make([]*instances.Hookable, 0),
-		verbose:     parseoptions.IsVerbose(ctx),
+		logger:           logger,
+		Units:            unitdb.New(),
+		CurrentZone:      zoner.NewLocation(),
+		instanceResolver: res,
+		Instances:        make([]*instances.Hookable, 0),
+		verbose:          parseoptions.IsVerbose(ctx),
 		timings: newTimingAccumulator(
 			"encounter_state.total",
 			"encounter_state.zone",
@@ -76,6 +76,17 @@ func New(ctx context.Context, logger *slog.Logger, reg ...*registry.Registry) *S
 		),
 	}
 	return s
+}
+
+func New(ctx context.Context, logger *slog.Logger, reg *registry.Registry) *State {
+	r := reg
+	if reg == nil {
+		r = registry.DefaultRegistry(logger)
+	}
+
+	return NewWithInstanceResolver(ctx, logger, func(verbose bool, z zone.Zone, db *unitdb.Units) *instances.Hookable {
+		return r.GetInstance(verbose, z, db)
+	})
 }
 
 func (s *State) Process(m messages.Message) error {
@@ -95,9 +106,11 @@ func (s *State) Process(m messages.Message) error {
 	case *messages.Versions:
 		s.CurrentVersions = typed
 	case *messages.Zone:
-		zoneStart := time.Now()
-		s.Zone(*typed)
-		s.timings.Add("encounter_state.zone", time.Since(zoneStart))
+		if s.instanceResolver != nil {
+			zoneStart := time.Now()
+			s.Zone(*typed)
+			s.timings.Add("encounter_state.zone", time.Since(zoneStart))
+		}
 	case *messages.Damage:
 		//s.Damage(typed)
 	case *messages.Cast:
@@ -145,7 +158,7 @@ func (s *State) Zone(z messages.Zone) {
 	}
 
 	if !matched {
-		s.CurrentInstance = s.reg.GetInstance(s.verbose, z.Zone, s.Units)
+		s.CurrentInstance = s.instanceResolver(s.verbose, z.Zone, s.Units)
 		if s.CurrentInstance != nil {
 			// Set any initial realm state that we have
 			s.CurrentInstance.SetRealm(s.CurrentRealm)
@@ -157,7 +170,6 @@ func (s *State) Zone(z messages.Zone) {
 			)
 			s.Instances = append(s.Instances, s.CurrentInstance)
 		}
-
 	}
 
 	s.logger.Info(fmt.Sprintf("Zone changed to %q (instance %d)", z.Name, z.InstanceID),

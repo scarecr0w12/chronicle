@@ -43,12 +43,12 @@ const (
 type Hookable struct {
 	name    string
 	timings *timings.Accumulator
-	factory *CommonFactory
 	logger  *slog.Logger
 	units   *unitdb.Units
 
 	// Static
-	CurrentZone zone.Zone
+	MatchesZoneF func(z zone.Zone) bool
+	CurrentZone  zone.Zone
 	*Identifier
 	verbose         bool
 	realm           *realm.Info         // mostly static
@@ -70,7 +70,24 @@ type Hookable struct {
 	lootTracking *loot.LootTracker
 }
 
+type InstanceParams struct {
+	Name        string
+	MatchesZone func(z zone.Zone) bool
+	Idf         *Identifier
+	Rankings    *rankings.Rankings
+	ExtraHooks  []instancehook.Hook
+}
+
 func (f *CommonFactory) NewHookable(ctx context.Context, logger *slog.Logger, db *unitdb.Units, z zone.Zone) *Hookable {
+	return NewHookable(ctx, logger, db, z, InstanceParams{
+		Name:        f.Name,
+		MatchesZone: f.MatchZone,
+		Idf:         f.Hostiles(),
+		Rankings:    f.Rankings,
+	})
+}
+
+func NewHookable(ctx context.Context, logger *slog.Logger, db *unitdb.Units, z zone.Zone, ip InstanceParams) *Hookable {
 	p := participants.New()
 	g := armory.New()
 
@@ -79,30 +96,30 @@ func (f *CommonFactory) NewHookable(ctx context.Context, logger *slog.Logger, db
 	if ok {
 		switch logType {
 		case database.LogTypeAzerothcore:
-			cres = wotlkcreatures.WoTLKCharacterFactories()
+			cres = wotlkcreatures.AzerothCoreCharacterFactories()
 		}
 	}
 
 	chrs := characters.NewCharacters(db, cres)
 	chrs.RegisterHook(p)
 
-	// classificationEmitter needs a forward reference to the hookable for the emit callback.
+	// ClassificationEmitter needs a forward reference to the hookable for the emit callback.
 	// We set the emit function after creating the hookable.
-	ce := &classificationEmitter{
+	ce := &ClassificationEmitter{
 		units:      db,
 		characters: chrs,
 	}
 	chrs.RegisterHook(ce)
 
-	cie := &combatantInfoEmitter{
+	cie := &CombatantInfoEmitter{
 		armory:     g,
 		characters: chrs,
 	}
 	chrs.RegisterHook(cie)
 
 	var speedrunTracker *rankings.SpeedrunTracker
-	if f.Rankings != nil && f.Rankings.Speedrun != nil {
-		speedrunTracker = rankings.NewSpeedrunTracker(*f.Rankings.Speedrun)
+	if ip.Rankings != nil && ip.Rankings.Speedrun != nil {
+		speedrunTracker = rankings.NewSpeedrunTracker(*ip.Rankings.Speedrun)
 		chrs.RegisterHook(speedrunTracker)
 	}
 
@@ -111,13 +128,13 @@ func (f *CommonFactory) NewHookable(ctx context.Context, logger *slog.Logger, db
 
 	lootTracking := loot.New(db)
 
-	hooks := []instancehook.Hook{
+	hooks := append(ip.ExtraHooks, []instancehook.Hook{
 		g,
 		ce,
 		cie,
 		lootTracking,
 		//auraTracking,
-	}
+	}...)
 	if speedrunTracker != nil {
 		hooks = append(hooks, speedrunTracker)
 	}
@@ -131,14 +148,14 @@ func (f *CommonFactory) NewHookable(ctx context.Context, logger *slog.Logger, db
 	}
 
 	c := &Hookable{
-		name:        f.Name,
-		factory:     f,
-		logger:      logger,
-		units:       db,
-		CurrentZone: z,
+		name:         ip.Name,
+		logger:       logger,
+		units:        db,
+		CurrentZone:  z,
+		MatchesZoneF: ip.MatchesZone,
 		//Auras:           auraTracking,
 		Characters:      chrs,
-		Identifier:      f.Hostiles(),
+		Identifier:      ip.Idf,
 		events:          encounterevents.NewEvents(),
 		g:               g,
 		p:               p,
@@ -192,7 +209,7 @@ func (h *Hookable) SetVersions(versions map[string]string, player *guid.GUID) {
 
 // MatchesZone
 // TODO: Should we care about the instance ID here?
-func (h *Hookable) MatchesZone(z zone.Zone) bool { return h.factory.MatchZone(z) }
+func (h *Hookable) MatchesZone(z zone.Zone) bool { return h.MatchesZoneF(z) }
 
 func (h *Hookable) Process(m messages.Message) (finalError error) {
 	err := h.units.ProcessMessage(m)

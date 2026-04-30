@@ -32,7 +32,7 @@ func TestSpectralTutor(t *testing.T) {
 	require.NoError(t, err)
 
 	p := vanilla.NewFromScanner(logger, liner, scans, nil)
-	output := encounters.New(ctx, logger)
+	output := encounters.New(ctx, logger, nil)
 	for {
 		msgs, err := p.Advance(ctx)
 		if errors.Is(err, io.EOF) {
