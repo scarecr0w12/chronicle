@@ -31,9 +31,9 @@ COPY . .
 COPY --from=frontend /chronicle/frontend/chronicle/dist ./frontend/chronicle/dist
 
 # Build the backend with embedded frontend assets from the prebuilt dist directory.
-RUN go build --tags "static ${SERVER}" \
-	-ldflags="-X=github.com/Emyrk/chronicle/internal/version.GitTag=${GIT_TAG} -X=github.com/Emyrk/chronicle/internal/version.GitCommit=${GIT_COMMIT} -X=github.com/Emyrk/chronicle/internal/version.BuildTime=${BUILD_TIME}" \
-	-o bin/chronicled ./cmd/chronicled
+# Touch dist so Make doesn't try to rebuild frontend (already built in stage 1)
+RUN touch frontend/chronicle/dist && \
+    GIT_TAG=${GIT_TAG} GIT_COMMIT=${GIT_COMMIT} BUILD_TIME=${BUILD_TIME} SERVER=${SERVER} make build-backend-static
 
 # Stage 3: Final minimal image
 FROM alpine:latest

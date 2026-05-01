@@ -92,12 +92,14 @@ func NewHookable(ctx context.Context, logger *slog.Logger, db *unitdb.Units, z z
 	p := participants.New()
 	g := armory.New()
 
+	combatantStrategy := EmitAllActive
 	cres := classiccreatures.TurtleCharacterFactories()
 	logType, ok := parsectx.Type(ctx)
 	if ok {
 		switch logType {
 		case database.LogTypeAzerothcore:
 			cres = wotlkcreatures.AzerothCoreCharacterFactories()
+			combatantStrategy = EmitAllPlayers
 		}
 	}
 
@@ -115,6 +117,7 @@ func NewHookable(ctx context.Context, logger *slog.Logger, db *unitdb.Units, z z
 	cie := &CombatantInfoEmitter{
 		armory:     g,
 		characters: chrs,
+		strategy:   combatantStrategy,
 	}
 	chrs.RegisterHook(cie)
 

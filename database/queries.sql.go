@@ -365,6 +365,24 @@ func (q *sqlQuerier) GetWoWServerRealm(ctx context.Context, id uuid.UUID) (WowSe
 	return i, err
 }
 
+const getWoWServerRealmByName = `-- name: GetWoWServerRealmByName :one
+SELECT id, server_id, name, created_by, url, description FROM wow_server_realms WHERE lower(name) = lower($1) LIMIT 1
+`
+
+func (q *sqlQuerier) GetWoWServerRealmByName(ctx context.Context, name string) (WowServerRealm, error) {
+	row := q.db.QueryRow(ctx, getWoWServerRealmByName, name)
+	var i WowServerRealm
+	err := row.Scan(
+		&i.ID,
+		&i.ServerID,
+		&i.Name,
+		&i.CreatedBy,
+		&i.Url,
+		&i.Description,
+	)
+	return i, err
+}
+
 const insertUploadKey = `-- name: InsertUploadKey :one
 
 INSERT INTO wow_server_upload_keys (id, realm_id, secret_hash, description, created_by)

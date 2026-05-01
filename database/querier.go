@@ -139,6 +139,7 @@ type sqlcQuerier interface {
 	GetWoWServer(ctx context.Context, id uuid.UUID) (WowServer, error)
 	GetWoWServerByName(ctx context.Context, name string) (WowServer, error)
 	GetWoWServerRealm(ctx context.Context, id uuid.UUID) (WowServerRealm, error)
+	GetWoWServerRealmByName(ctx context.Context, name string) (WowServerRealm, error)
 	GetWorld(ctx context.Context, id uuid.UUID) (World, error)
 	GetWorldByName(ctx context.Context, name string) (World, error)
 	GetWorldsByServer(ctx context.Context, serverID uuid.UUID) ([]World, error)

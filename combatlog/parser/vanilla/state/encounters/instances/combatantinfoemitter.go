@@ -10,6 +10,13 @@ import (
 	"github.com/google/uuid"
 )
 
+type EmitStrategy string
+
+const (
+	EmitAllActive  EmitStrategy = "all_active"
+	EmitAllPlayers EmitStrategy = "all_players"
+)
+
 // Verify interface compliance.
 var _ instancehook.Hook = (*CombatantInfoEmitter)(nil)
 var _ characters.SetHook = (*CombatantInfoEmitter)(nil)
@@ -23,6 +30,7 @@ type CombatantInfoEmitter struct {
 	armory     *armory.Tracker
 	characters *characters.Characters
 	emit       func(*messages.Combatant)
+	strategy   EmitStrategy
 }
 
 // characters.SetHook — emit combatant info when a player becomes active mid-fight.
@@ -55,7 +63,19 @@ func (ce *CombatantInfoEmitter) Finalize(_ context.Context) error { return nil }
 
 // instancehook.Hook — emit combatant info for all active players when a fight starts.
 func (ce *CombatantInfoEmitter) FightStarted(_ uuid.UUID, m messages.Message) {
-	ce.emitAllActive(m)
+	switch ce.strategy {
+	case EmitAllActive:
+		ce.emitAllActive(m)
+	case EmitAllPlayers:
+		for _, player := range ce.armory.Players {
+			ce.emit(&messages.Combatant{
+				MessageBase: messages.Base(m.Date()),
+				Combatant:   player,
+			})
+		}
+	default:
+		ce.emitAllActive(m)
+	}
 }
 
 // instancehook.Hook — no-op on fight end (gear snapshot at start is sufficient).

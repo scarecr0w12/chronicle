@@ -21,17 +21,17 @@ func (api *API) GetArmoryPlayer(w http.ResponseWriter, r *http.Request) {
 	realmParam := chi.URLParam(r, "realm")
 	playerParam := chi.URLParam(r, "player")
 
-	// Resolve realm: try UUID first, then static realm name lookup.
+	// Resolve realm: try UUID first, then case-insensitive DB name lookup.
 	realmID, err := uuid.Parse(realmParam)
 	if err != nil {
-		var ok bool
-		realmID, ok = dbstatic.RealmByName(realmParam)
-		if !ok {
+		realm, dbErr := api.Opts.Zed.GetWoWServerRealmByName(ctx, realmParam)
+		if dbErr != nil {
 			httpapi.Write(ctx, w, http.StatusNotFound, chroniclesdk.Response{
 				Message: "Realm not found",
 			})
 			return
 		}
+		realmID = realm.ID
 	}
 
 	// Resolve player: try GUID parse for the identifier field,

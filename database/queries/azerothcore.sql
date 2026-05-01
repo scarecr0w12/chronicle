@@ -24,6 +24,10 @@ SELECT * FROM wow_server_realms WHERE server_id = $1 ORDER BY name;
 -- name: GetWoWServerRealm :one
 SELECT * FROM wow_server_realms WHERE id = $1;
 
+-- name: GetWoWServerRealmByName :one
+SELECT * FROM wow_server_realms WHERE lower(name) = lower(@name) LIMIT 1;
+
+
 -- name: InsertWoWServerRealm :one
 INSERT INTO wow_server_realms (id, server_id, name, description, url, created_by)
 VALUES ($1, $2, $3, $4, $5, $6) RETURNING *;
