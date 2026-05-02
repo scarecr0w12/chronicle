@@ -34,10 +34,12 @@ func (c *LogBased) Process(m messages.Message) error {
 		if msg.UnitGUID == c.ID() {
 			c.Start("combat enter", m)
 		}
+		return nil
 	case *messages.UnitEvade:
 		if msg.UnitGUID == c.ID() {
 			c.End("evade", m, period.EndStateReset)
 		}
+		return nil
 	case *messages.Slain:
 		if c.ID() == msg.Victim {
 			c.Died(characters.ReasonSlain, m)

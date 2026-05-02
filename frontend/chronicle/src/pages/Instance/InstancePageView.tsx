@@ -348,6 +348,32 @@ function mergeEnemiesByGuid(encounters: Encounter[]): MergedEnemy[] {
 }
 
 // ============================================================================
+// Enemy status helpers (killed / reset / alive)
+// ============================================================================
+
+type EnemyStatus = "killed" | "reset" | "alive";
+
+function getEnemyStatus(enemy: MergedEnemy): EnemyStatus {
+  const lastPeriod = enemy.periods[enemy.periods.length - 1];
+  if (lastPeriod?.end_state === "reset") return "reset";
+  if (enemy.killed) return "killed";
+  return "alive";
+}
+
+function getGroupStatus(enemies: MergedEnemy[]): EnemyStatus {
+  const statuses = enemies.map(getEnemyStatus);
+  if (statuses.every(s => s === "killed")) return "killed";
+  if (statuses.some(s => s === "reset") && statuses.every(s => s !== "alive")) return "reset";
+  return "alive";
+}
+
+const statusColors = {
+  killed: { bg: "bg-green-500/15", border: "border-green-500/30", dot: "bg-green-500", bgLight: "bg-green-500/10", borderLight: "border-green-500/20" },
+  reset:  { bg: "bg-yellow-500/15", border: "border-yellow-500/30", dot: "bg-yellow-500", bgLight: "bg-yellow-500/10", borderLight: "border-yellow-500/20" },
+  alive:  { bg: "bg-red-500/15", border: "border-red-500/30", dot: "bg-red-500", bgLight: "bg-red-500/10", borderLight: "border-red-500/20" },
+} as const;
+
+// ============================================================================
 type EncounterTimeDisplay = "duration" | "start_time" | "end_time";
 
 // EncounterSidebar component
@@ -1215,22 +1241,21 @@ function EncounterDetail({
                         if (group.enemies.length === 1) {
                           const enemy = group.enemies[0];
                           const isSelected = isEnemySelected(enemy.id);
+                          const colors = statusColors[getEnemyStatus(enemy)];
                           const btn = (
                             <button
                               key={enemy.id}
                               onClick={() => onToggleEnemy(enemy.id)}
                               className={cn(
                                 "flex items-center gap-1.5 px-2 py-1 rounded text-xs cursor-pointer transition-all",
-                                enemy.killed
-                                  ? "bg-green-500/15 border border-green-500/30"
-                                  : "bg-red-500/15 border border-red-500/30",
+                                `${colors.bg} border ${colors.border}`,
                                 isSelected && "ring-2 ring-primary ring-offset-1 ring-offset-background",
                                 hasSelection && !isSelected && "opacity-50"
                               )}
                             >
                               <span className={cn(
                                 "w-1.5 h-1.5 rounded-full flex-shrink-0",
-                                enemy.killed ? "bg-green-500" : "bg-red-500"
+                                colors.dot
                               )} />
                               {enemy.boss && (
                                 <Crown className="h-3 w-3 text-yellow-500 flex-shrink-0" />
@@ -1256,15 +1281,14 @@ function EncounterDetail({
                         const allSelected = groupIds.every(id => isEnemySelected(id));
                         const someSelected = !allSelected && groupIds.some(id => isEnemySelected(id));
                         const selectedCount = groupIds.filter(id => isEnemySelected(id)).length;
+                        const grpColors = statusColors[getGroupStatus(group.enemies)];
                         return (
                           <PopoverPrimitive.Root key={group.name}>
                             <PopoverPrimitive.Trigger asChild>
                               <button
                                 className={cn(
                                   "flex items-center gap-1.5 px-2 py-1 rounded text-xs cursor-pointer transition-all",
-                                  group.killed
-                                    ? "bg-green-500/15 border border-green-500/30"
-                                    : "bg-red-500/15 border border-red-500/30",
+                                  `${grpColors.bg} border ${grpColors.border}`,
                                   allSelected && "ring-2 ring-primary ring-offset-1 ring-offset-background",
                                   someSelected && "ring-2 ring-primary/50 ring-offset-1 ring-offset-background",
                                   hasSelection && !allSelected && !someSelected && "opacity-50"
@@ -1272,7 +1296,7 @@ function EncounterDetail({
                               >
                                 <span className={cn(
                                   "w-1.5 h-1.5 rounded-full flex-shrink-0",
-                                  group.killed ? "bg-green-500" : "bg-red-500"
+                                  grpColors.dot
                                 )} />
                                 {group.boss && (
                                   <Crown className="h-3 w-3 text-yellow-500 flex-shrink-0" />
@@ -1318,22 +1342,21 @@ function EncounterDetail({
                                 <div className="flex flex-wrap gap-1">
                                   {group.enemies.map((enemy, idx) => {
                                     const isSelected = isEnemySelected(enemy.id);
+                                    const eColors = statusColors[getEnemyStatus(enemy)];
                                     const btn = (
                                       <button
                                         key={enemy.id}
                                         onClick={() => onToggleEnemy(enemy.id)}
                                         className={cn(
                                           "flex items-center gap-1.5 px-2 py-1 rounded text-xs cursor-pointer transition-all",
-                                          enemy.killed
-                                            ? "bg-green-500/10 border border-green-500/20"
-                                            : "bg-red-500/10 border border-red-500/20",
+                                          `${eColors.bgLight} border ${eColors.borderLight}`,
                                           isSelected && "ring-2 ring-primary ring-offset-1 ring-offset-background",
                                           hasSelection && !isSelected && "opacity-50"
                                         )}
                                       >
                                         <span className={cn(
                                           "w-1.5 h-1.5 rounded-full flex-shrink-0",
-                                          enemy.killed ? "bg-green-500" : "bg-red-500"
+                                          eColors.dot
                                         )} />
                                         <span className="font-medium">{enemy.name} #{idx + 1}</span>
                                       </button>
