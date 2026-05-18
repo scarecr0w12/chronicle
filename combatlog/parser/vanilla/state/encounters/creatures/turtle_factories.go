@@ -18,6 +18,8 @@ func TurtleCharacterFactories() []characters.CharacterFactory {
 		NewEdwinVanCleef,
 		// Dire Maul
 		NewImmolthar,
+		EyeofImmolthar,
+		NewKingGordok,
 		// Molten Core
 		NewCoreHoundCharacter,
 		NewMajordomoPartyCharacter,
@@ -85,5 +87,8 @@ func TurtleCharacterFactories() []characters.CharacterFactory {
 		NewIncantagos,
 		// Emerald Sanctum
 		NewSolnius,
+		// L/UBRS
+		NewMotherSmolderweb,
+		NewBloodaxeWorgPup,
 	}
 }

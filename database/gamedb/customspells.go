@@ -21,6 +21,19 @@ const (
 )
 
 var customSpells = map[chrondbc.SpellID]chrondbc.Spell{
+	chrondbc.SpellIDAutoAttack: {
+		ID: chrondbc.SpellIDAutoAttack, Name_lang: i18n.GetEnglish("Auto Attack"),
+		SpellIconID: 368,
+		School:      chrondbc.SchoolPhysical, BaseLevel: 1, SpellLevel: 1,
+		StanceBarOrder: -1,
+		RangeIndex:     1,
+		Attrs:          *(&chrondbc.SpellAttributes{}).Set(chrondbc.Attr_IsAbility),
+		Effect: [3]chrondbc.Effect{
+			chrondbc.EffectAttack,
+			0,
+			0,
+		},
+	},
 	EnvironmentFalling: {
 		ID: EnvironmentFalling, Name_lang: i18n.GetEnglish("Falling"),
 		SpellIconID: 246, // Ability_Kick

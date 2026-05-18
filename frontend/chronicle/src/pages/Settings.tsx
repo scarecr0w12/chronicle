@@ -19,6 +19,7 @@ import {
   useUpdateLayoutDefaults,
   useUpdateActionBarSlots,
   useLogGroups,
+  useSiteConfig,
   type ActionBarSlotsResponse,
   type UserPanelLayout,
   type RequestError,
@@ -160,7 +161,7 @@ type Tab = {
   icon: LucideIcon;
 };
 
-const tabs: Tab[] = [
+const allTabs: Tab[] = [
   { path: "/account/settings", label: "Profile", icon: User },
   { path: "/account/storage", label: "Storage", icon: HardDrive },
   // { path: "/account/notifications", label: "Notifications", icon: Bell },
@@ -174,6 +175,10 @@ export function AccountLayout() {
   const location = useLocation();
   const isMobile = useIsMobile();
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  const { data: siteConfig } = useSiteConfig();
+  const tabs = siteConfig?.client_uploads_disabled
+    ? allTabs.filter((t) => t.path !== "/account/storage")
+    : allTabs;
 
   const renderNavLinks = (closeOnNavigate: boolean) => (
     <ul className="space-y-1">

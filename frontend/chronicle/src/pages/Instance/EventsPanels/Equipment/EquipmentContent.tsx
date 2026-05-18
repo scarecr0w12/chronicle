@@ -279,7 +279,7 @@ export function EquipmentContent(props: PanelRenderProps<EquipmentResult>) {
                 setSearch={setSearch}
                 searchRef={searchRef}
                 selectedGuid={selected?.guid ?? null}
-                onSelect={(guid) => { setSelectedGuid(guid); setDropdownOpen(false); setSearch(""); }}
+                onSelect={(guid) => { setSelectedGuid(guid); setDropdownOpen(false); setSearch(""); context.onTogglePlayers?.([guid]); }}
                 onClose={() => { setDropdownOpen(false); setSearch(""); }}
               />
             )}

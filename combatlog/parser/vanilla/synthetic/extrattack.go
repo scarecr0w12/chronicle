@@ -7,7 +7,9 @@ import (
 	"github.com/Emyrk/chronicle/combatlog/parser/vanilla/messages"
 	"github.com/Emyrk/chronicle/combatlog/parser/vanilla/state/zoner"
 	"github.com/Emyrk/chronicle/database/gamedb"
+	"github.com/Emyrk/chronicle/database/gamedb/chrondbc"
 	"github.com/Emyrk/chronicle/database/gamedb/chrondbc/dbcmem"
+	"github.com/Emyrk/chronicle/internal/ptr"
 )
 
 // 11815 is the item id for HoJ
@@ -39,6 +41,9 @@ func (s *extraAttack) ProcessMessage(msgs []messages.Message) []messages.Message
 			if extra, ok := dbcmem.ExtraAttackSpells[int32(m.SpellData.ID)]; ok {
 				spellData, err := s.WoWDB.Spell(m.SpellData.ID)
 				if err != nil {
+					if chrondbc.IsSpellNotFound(err) {
+						spellData = ptr.Ref(chrondbc.UnknownSpell(m.SpellData.ID))
+					}
 					s.logger.Error("failed to fetch spell data for extra attack", "spellID", m.SpellData.ID, "error", err)
 				}
 

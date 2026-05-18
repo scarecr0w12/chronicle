@@ -2186,15 +2186,19 @@ export function InstancePageView({
         .filter((id): id is string => Boolean(id)),
     );
 
+    const resolvedEncounters = encounterIds.length > 0 ? encounterIds : instance.encounters.map((e) => e.id);
     setViewState((prev) => ({
       ...prev,
       panels: orderedPanels,
       panelOptions: orderedOptions,
-      encounters: encounterIds.length > 0 ? encounterIds : instance.encounters.map((e) => e.id),
+      encounters: resolvedEncounters,
       enemies: enemyIDs,
       players: playerIDs,
       includeWipes: payload.view?.includeWipes ?? false,
     }));
+    // Sync the parent so its encounter state matches, preventing the
+    // parent→child sync effect from overwriting the shared-link selection.
+    onSelectEncounters?.(resolvedEncounters);
     setActiveLayoutId(typeof payload.layoutId === "string" ? payload.layoutId : null);
     setImportedLayoutItems(orderedItems);
     setActivePresetId(null);
@@ -2218,7 +2222,7 @@ export function InstancePageView({
     } else {
       timeRange?.reset();
     }
-  }, [allMergedEnemies, instance.encounters, instance.id, instance.players, setViewState, timeRange]);
+  }, [allMergedEnemies, instance.encounters, instance.id, instance.players, onSelectEncounters, setViewState, timeRange]);
 
   const handleExportLayout = useCallback(() => {
     const payload = {

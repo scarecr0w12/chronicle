@@ -21,6 +21,10 @@ DELETE FROM wow_servers WHERE id = $1;
 -- name: ListWoWServerRealms :many
 SELECT * FROM wow_server_realms WHERE server_id = $1 ORDER BY name;
 
+-- name: ListAllWoWServerRealms :many
+SELECT * FROM wow_server_realms ORDER BY name;
+
+
 -- name: GetWoWServerRealm :one
 SELECT * FROM wow_server_realms WHERE id = $1;
 

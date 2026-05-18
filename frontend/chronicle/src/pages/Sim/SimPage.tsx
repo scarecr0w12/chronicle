@@ -20,6 +20,7 @@ const RACES: Record<number, { name: string; classes: number[] }> = {
   6: { name: "Tauren", classes: [1, 3, 7, 11] },
   7: { name: "Gnome", classes: [1, 4, 8, 9] },
   8: { name: "Troll", classes: [1, 3, 4, 5, 7, 8] },
+  11: { name: "Draenei", classes: [1, 2, 3, 5, 7, 8] },
 };
 
 const CLASSES: Record<number, string> = {
@@ -59,6 +60,7 @@ const CLASS_ID_TO_WOW: Record<number, WoWHeroClasses> = {
 const RACE_ID_TO_WOW: Record<number, WoWHeroRaces> = {
   1: "Human", 2: "Orc", 3: "Dwarf", 4: "NightElf",
   5: "Scourge", 6: "Tauren", 7: "Gnome", 8: "Troll",
+  11: "Draenei",
 };
 
 type Tab = "config" | "results";

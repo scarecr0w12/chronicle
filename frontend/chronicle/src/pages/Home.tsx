@@ -2,9 +2,12 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Users, Shield, User, Upload, Eye, Share2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useSiteConfig } from "@/api/queries";
 
 export function Home() {
   const { isAuthenticated } = useAuth();
+  const { data: siteConfig } = useSiteConfig();
+  const showUpload = !siteConfig?.client_uploads_disabled;
   return (
     <div className="flex flex-col">
       {/* Hero Section */}
@@ -31,9 +34,11 @@ export function Home() {
             <Button asChild size="lg">
               <Link to={isAuthenticated ? "/logs" : "/recent"}>{isAuthenticated ? "View Your Logs" : "View a Sample"}</Link>
             </Button>
-            <Button variant="outline" size="lg" asChild>
-              <Link to="/upload">{isAuthenticated ? "Upload a Log" : "How to Do This for Your Next Raid"}</Link>
-            </Button>
+            {showUpload && (
+              <Button variant="outline" size="lg" asChild>
+                <Link to="/upload">{isAuthenticated ? "Upload a Log" : "How to Do This for Your Next Raid"}</Link>
+              </Button>
+            )}
           </div>
           
           <p className="text-sm text-muted-foreground">

@@ -37,7 +37,7 @@ const PANEL_CATEGORIES: PanelCategory[] = [
   },
   {
     label: "Survivability",
-    items: ["damage_taken", "enemy_damage_taken", "mitigation", "absorbed_damage"], // TODO: Add "avoidance" when spell school data is available
+    items: ["damage_taken", "enemy_damage_taken", "mitigation", "absorbed_damage", "resists"], // TODO: Add "avoidance" when spell school data is available
   },
   {
     label: "Resources",
@@ -79,7 +79,7 @@ const PANEL_CATEGORIES: PanelCategory[] = [
   },
   {
     label: "Utility",
-    items: ["roles", "timeline", "rotations", "comparison", "all_activity", "metrics", "periods", "possession", "unit_lookup", "equipment", "loot", "logging_metadata", "leaderboard", "empty"],
+    items: ["roles", "timeline", "rotations", "comparison", "all_activity", "metrics", "periods", "possession", "unit_lookup", "equipment", "guilds", "loot", "logging_metadata", "leaderboard", "empty"],
     icon: <Toolbox className="h-4 w-4" />,
   },
 ];

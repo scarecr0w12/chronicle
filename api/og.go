@@ -15,7 +15,6 @@ import (
 	"github.com/Emyrk/chronicle/combatlog/parser/guid"
 	"github.com/Emyrk/chronicle/database"
 	"github.com/Emyrk/chronicle/database/authz"
-	"github.com/Emyrk/chronicle/database/dbstatic"
 	"github.com/Emyrk/chronicle/frontend"
 )
 
@@ -149,11 +148,11 @@ func (api *API) armoryOG(realm, player string) *frontend.OGData {
 
 	realmID, err := uuid.Parse(realm)
 	if err != nil {
-		var ok bool
-		realmID, ok = dbstatic.RealmByName(realm)
-		if !ok {
+		r, dbErr := api.Opts.Zed.GetWoWServerRealmByName(ctx, realm)
+		if dbErr != nil {
 			return nil
 		}
+		realmID = r.ID
 	}
 
 	var identifier guid.GUID

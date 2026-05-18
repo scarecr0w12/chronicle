@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Redirecting…</title>
+    <meta name="robots" content="noindex" />
+    <script>
+      // Unknown paths on the landing site redirect to the Turtle WoW Chronicle
+      // so old links like https://chronicleclassic.com/logs/abc keep working.
+      (function () {
+        var path = window.location.pathname || "/";
+        var search = window.location.search || "";
+        var hash = window.location.hash || "";
+
+        // Strip the github.io project prefix if present (so /chronicle/foo → /foo)
+        path = path.replace(/^\/chronicle(\/|$)/, "/");
+
+        // Avoid redirect loops if somehow served at the apex with no path
+        if (path === "/" || path === "") {
+          window.location.replace("https://turtle.chronicleclassic.com/");
+        } else {
+          window.location.replace(
+            "https://turtle.chronicleclassic.com" + path + search + hash,
+          );
+        }
+      })();
+    </script>
+    <meta http-equiv="refresh" content="0; url=https://turtle.chronicleclassic.com/" />
+  </head>
+  <body>
+    <p>
+      Redirecting to
+      <a href="https://turtle.chronicleclassic.com/">turtle.chronicleclassic.com</a>…
+    </p>
+  </body>
+</html>

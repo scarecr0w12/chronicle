@@ -100,15 +100,20 @@ func demo() *serpent.Command {
 				return fmt.Errorf("(demo) open wow client: %w", err)
 			}
 
-			//si, err := wc.Map()
-			//if err != nil {
-			//	return fmt.Errorf("read items: %w", err)
-			//}
-			//
-			//_ = si.Range(func(cursor *dbdefs.Ent_Map) bool {
-			//	fmt.Println(cursor.MapName_lang.String(), cursor.MapType)
-			//	return true
-			//})
+			spells, err := wc.Spells()
+			if err != nil {
+				return fmt.Errorf("read spells: %w", err)
+			}
+
+			_ = spells.Range(func(cursor *dbdefs.Ent_Spell) bool {
+				if cursor.ID == 6603 {
+					fmt.Println(cursor.Name_lang.String())
+				}
+				if cursor.Name_lang.String() == "Ice Shards" {
+					fmt.Println(cursor.Description_lang.String())
+				}
+				return true
+			})
 
 			spdb, err := wc.LoadingScreens()
 			if err != nil {

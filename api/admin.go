@@ -697,26 +697,34 @@ func (a *API) AdminGetSiteConfig(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Cache-Control", "public, max-age=30")
 	httpapi.Write(ctx, w, http.StatusOK, chroniclesdk.SiteConfig{
-		SignupsEnabled:  config.SignupsEnabled,
-		ShortLinkDomain: a.Opts.ShortLinkDomain,
+		SignupsEnabled:        config.SignupsEnabled,
+		ShortLinkDomain:       a.Opts.ShortLinkDomain,
+		ClientUploadsDisabled: a.Opts.ClientUploadsDisabled,
 	})
 }
 
 func (a *API) AdminUpdateSiteConfig(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	var req chroniclesdk.SiteConfig
+	var req chroniclesdk.UpdateSiteConfigRequest
 	if !httpapi.Read(ctx, w, r, &req) {
 		return
 	}
-	config, err := a.Opts.Zed.UpdateSiteConfig(ctx, req.SignupsEnabled)
+
+	var config database.SiteConfig
+	var err error
+	if req.SignupsEnabled != nil {
+		config, err = a.Opts.Zed.UpdateSiteConfig(ctx, *req.SignupsEnabled)
+	} else {
+		config, err = a.Opts.Zed.GetSiteConfig(ctx)
+	}
 	if err != nil {
 		httpapi.InternalServerError(w, err)
 		return
 	}
 	httpapi.Write(ctx, w, http.StatusOK, chroniclesdk.SiteConfig{
-		SignupsEnabled:  config.SignupsEnabled,
-		ShortLinkDomain: a.Opts.ShortLinkDomain,
+		SignupsEnabled:        config.SignupsEnabled,
+		ShortLinkDomain:       a.Opts.ShortLinkDomain,
+		ClientUploadsDisabled: a.Opts.ClientUploadsDisabled,
 	})
 }

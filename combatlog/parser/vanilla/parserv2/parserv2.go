@@ -14,6 +14,7 @@ import (
 	"github.com/Emyrk/chronicle/combatlog/parser/vanilla/synthetic"
 	"github.com/Emyrk/chronicle/database/gamedb"
 	"github.com/Emyrk/chronicle/database/gamedb/chrondbc"
+	"github.com/Emyrk/chronicle/internal/ptr"
 )
 
 type Parser struct {
@@ -163,6 +164,10 @@ func (p *Parser) Spell(id chrondbc.SpellID) (*chrondbc.Spell, error) {
 		entry := p.missedSpells[id]
 		entry.Count++
 		p.missedSpells[id] = entry
+
+		if chrondbc.IsSpellNotFound(err) {
+			return ptr.Ref(chrondbc.UnknownSpell(id)), nil
+		}
 		return nil, err
 	}
 	return sp, nil

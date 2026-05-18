@@ -6,7 +6,7 @@ import { LogIn, Loader2, Upload as UploadIcon, HardDrive, HelpCircle } from "luc
 import { Card } from "@/components/ui/Card/Card";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/hooks/useAuth";
-import { useLogGroups, useSession, type WoWLogGroup } from "@/api/queries";
+import { useAuthorizationCheck, useLogGroups, useSession, useSiteConfig, type WoWLogGroup } from "@/api/queries";
 import { LogsCalendar } from "./components/LogsCalendar";
 import { CalendarDayContent } from "./components/CalendarDayContent";
 import { UploadsTable, type SortField, type SortDirection } from "./components/UploadsTable";
@@ -98,6 +98,15 @@ export function LogsListView({
   const [searchParams, setSearchParams] = useSearchParams();
   const instanceFilter = searchParams.get("instance");
   const [showUploadDates, setShowUploadDates] = useLocalStorage("logs-show-uploads", false);
+  const { data: siteConfig } = useSiteConfig();
+  const authzChecks = useMemo(() => ({
+    adminLogs: "chronicle:chronicle#admin_logs",
+  }), []);
+  const { data: authz } = useAuthorizationCheck(authzChecks, {
+    enabled: isAuthenticated,
+  });
+  const hasAdminLogs = authz?.adminLogs ?? false;
+  const showUpload = !siteConfig?.client_uploads_disabled || hasAdminLogs;
   
   // Table sort state
   const [sortField, setSortField] = useState<SortField>("date");
@@ -151,12 +160,14 @@ export function LogsListView({
             View and manage your uploaded raid logs.
           </p>
         </div>
-        <Link to="/upload" className="self-start sm:self-auto">
-          <Button>
-            <UploadIcon className="h-4 w-4 mr-2" />
-            Upload New
-          </Button>
-        </Link>
+        {showUpload && (
+          <Link to="/upload" className="self-start sm:self-auto">
+            <Button>
+              <UploadIcon className="h-4 w-4 mr-2" />
+              Upload New
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Auth Check */}

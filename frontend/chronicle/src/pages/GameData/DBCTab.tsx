@@ -18,6 +18,12 @@ const SUPPORTED_DBCS: SupportedDBC[] = [
     description: "Item display info and icon mappings",
     fileHint: "ItemDisplayInfo.dbc",
   },
+  {
+    value: "SpellItemEnchantment",
+    label: "SpellItemEnchantment",
+    description: "Enchantment effects and properties",
+    fileHint: "SpellItemEnchantment.dbc",
+  },
 ];
 
 interface DBCUploadResult {
@@ -81,7 +87,7 @@ export function DBCTab() {
       const formData = new FormData();
       formData.append("dbc_file", file);
 
-      const response = await fetch(`/api/v1/game-data/dbc/upload?mode=${mode}`, {
+      const response = await fetch(`/api/v1/game-data/dbc/upload?mode=${mode}&dbc_type=${dbcType}`, {
         method: "POST",
         body: formData,
       });
@@ -105,8 +111,8 @@ export function DBCTab() {
       <div>
         <h2 className="text-2xl font-bold">DBC Import</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Upload DBC files extracted from a WoW 3.3.5a client to populate display info and icon mappings.
-          Currently supports <code>ItemDisplayInfo.dbc</code>.
+          Upload DBC files extracted from a WoW client to populate game data.
+          Select the DBC type from the dropdown below.
         </p>
       </div>
 

@@ -13,7 +13,6 @@ import (
 	"github.com/Emyrk/chronicle/api/httpapi"
 	"github.com/Emyrk/chronicle/combatlog/parser/guid"
 	"github.com/Emyrk/chronicle/database"
-	"github.com/Emyrk/chronicle/database/dbstatic"
 )
 
 func (api *API) GetArmoryPlayer(w http.ResponseWriter, r *http.Request) {
@@ -79,14 +78,14 @@ func (api *API) SearchArmoryPlayers(w http.ResponseWriter, r *http.Request) {
 		var err error
 		filterRealm, err = uuid.Parse(realmStr)
 		if err != nil {
-			var ok bool
-			filterRealm, ok = dbstatic.RealmByName(realmStr)
-			if !ok {
+			realm, dbErr := api.Opts.Zed.GetWoWServerRealmByName(ctx, realmStr)
+			if dbErr != nil {
 				httpapi.Write(ctx, w, http.StatusBadRequest, chroniclesdk.Response{
 					Message: "Invalid realm",
 				})
 				return
 			}
+			filterRealm = realm.ID
 		}
 	}
 

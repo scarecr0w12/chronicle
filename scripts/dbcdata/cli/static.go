@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"strings"
 	"text/template"
 
 	"github.com/Emyrk/chronicle/database/gamedb/dbcdb"
@@ -121,7 +120,7 @@ func generateSpellIcons(wc *dbcdb.WoWClient, outputDir string, stdout io.Writer,
 	err = icons.Range(func(cursor *dbdefs.Ent_SpellIcon) bool {
 		entries = append(entries, spellIconEntry{
 			ID:              cursor.ID,
-			TextureFilename: strings.TrimPrefix(cursor.TextureFilename, "Interface\\Icons\\"),
+			TextureFilename: cutIconPrefix(cursor.TextureFilename),
 		})
 		return true
 	})

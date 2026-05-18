@@ -8,7 +8,7 @@ export function Disclaimer() {
         </p>
         <p>
           We are not affiliated with, endorsed by, or associated with Blizzard
-          Entertainment or Turtle WoW. World of Warcraft® and related trademarks
+          Entertainment. World of Warcraft® and related trademarks
           are the property of Blizzard Entertainment.
         </p>
         <p>

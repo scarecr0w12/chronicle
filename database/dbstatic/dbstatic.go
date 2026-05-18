@@ -1,8 +1,6 @@
 package dbstatic
 
 import (
-	"strings"
-
 	"github.com/google/uuid"
 )
 
@@ -64,31 +62,4 @@ func RealmGurubashi() uuid.UUID {
 
 func RealmKezan() uuid.UUID {
 	return uuid.MustParse("140eaa55-317d-4299-8756-83f495efba15")
-}
-
-func RealmByName(name string) (uuid.UUID, bool) {
-	switch strings.ToLower(name) {
-	case "ambershire":
-		return RealmAmbershire(), true
-	case "tel abim", "tel'abim":
-		return RealmTelAbim(), true
-	case "nordanaar":
-		return RealmNordanaar(), true
-	case "south seas":
-		return RealmSouthSeas(), true
-	case "gehennas":
-		return RealmGehennas(), true
-	case "ravenstorm":
-		return RealmRavenstorm(), true
-	case "karazhan":
-		return RealmKarazhan(), true
-	case "blood ring":
-		return RealmBloodRing(), true
-	case "gurubashi":
-		return RealmGurubashi(), true
-	case "kezan":
-		return RealmKezan(), true
-	default:
-		return RealmUnknown(), false
-	}
 }

@@ -61,7 +61,7 @@ func (w *WrappedTable[T]) ID(i int) (*T, error) {
 		return w.Index(idx)
 	}
 
-	return nil, fmt.Errorf("couldn't find record matching ID %d", i)
+	return nil, fmt.Errorf("record not found: %d", i)
 
 	//x := new(T)
 	//if err := w.wrapped.ID(i, x); err != nil {

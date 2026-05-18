@@ -51,8 +51,9 @@ type Service struct {
 	devAuth         bool
 	saffronURL      *url.URL
 	ocrURL          *url.URL
-	shortLinkDomain string
-	discordAuth     chronauth.DiscordOAuth
+	shortLinkDomain       string
+	clientUploadsDisabled bool
+	discordAuth           chronauth.DiscordOAuth
 	app             *api.API
 	closeListener   func()
 }
@@ -169,8 +170,9 @@ func (s *Service) Start(ctx context.Context) error {
 		Mailer:           mailer,
 
 		AccessURL:       au,
-		ShortLinkDomain: s.shortLinkDomain,
-		DevOAuth:        s.devAuth,
+		ShortLinkDomain:       s.shortLinkDomain,
+		ClientUploadsDisabled: s.clientUploadsDisabled,
+		DevOAuth:              s.devAuth,
 		Discord:         s.discordAuth,
 		SecretPEM:       decodedSecret,
 	})
@@ -254,6 +256,15 @@ func (s *Service) Options() serpent.OptionSet {
 			Env:         "CHRONICLE_SHORT_LINK_DOMAIN",
 			Default:     "",
 			Value:       serpent.StringOf(&s.shortLinkDomain),
+		},
+		{
+			Name:        "Client Uploads Disabled",
+			Description: "Disable client-side log uploads. Use when server-side logging is active.",
+			Required:    false,
+			Flag:        "client-uploads-disabled",
+			Env:         "CHRONICLE_CLIENT_UPLOADS_DISABLED",
+			Default:     "false",
+			Value:       serpent.BoolOf(&s.clientUploadsDisabled),
 		},
 		{
 			Name:        "Internal OCR URL",

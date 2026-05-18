@@ -92,3 +92,14 @@ ORDER BY
 LIMIT @result_limit
 OFFSET @result_offset
 ;
+
+-- name: CensusPlayerCounts :many
+SELECT
+  class,
+  race,
+  COUNT(*) AS count
+FROM game_players
+WHERE updated_at >= @updated_after::timestamptz
+  AND (cardinality(@realm_ids::uuid[]) = 0 OR realm_id = ANY(@realm_ids::uuid[]))
+GROUP BY class, race
+ORDER BY class, race;

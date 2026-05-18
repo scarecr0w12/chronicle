@@ -71,27 +71,27 @@ describe("evaluateFilters", () => {
 
   it("supports OR combinator between filters", () => {
     const filters: PanelFilter[] = [
-      { type: "ability_name", value: "shadow" },
-      { type: "ability_name", value: "fire", combinator: "or" },
+      { type: "ability_name", value: "shadow bolt" },
+      { type: "ability_name", value: "fireball", combinator: "or" },
     ];
-    // "shadow" fails but "fire" matches via OR → group passes
+    // "shadow bolt" fails but "fireball" matches via OR → group passes
     expect(evaluateFilters(filters, createDamageEvent(), createContext())).toBe(true);
   });
 
   it("AND groups must all pass", () => {
     const filters: PanelFilter[] = [
-      { type: "ability_name", value: "shadow" },
-      { type: "ability_name", value: "fire", combinator: "or" },
+      { type: "ability_name", value: "shadow bolt" },
+      { type: "ability_name", value: "fireball", combinator: "or" },
       { type: "ability_id", value: "133" }, // AND (new group)
     ];
-    // Group 1: (shadow OR fire) → true. Group 2: (spell 133) → true
+    // Group 1: (shadow bolt OR fireball) → true. Group 2: (spell 133) → true
     expect(evaluateFilters(filters, createDamageEvent(), createContext())).toBe(true);
   });
 
   it("AND group rejects if any group fails", () => {
     const filters: PanelFilter[] = [
-      { type: "ability_name", value: "shadow" },
-      { type: "ability_name", value: "fire", combinator: "or" },
+      { type: "ability_name", value: "shadow bolt" },
+      { type: "ability_name", value: "fireball", combinator: "or" },
       { type: "ability_id", value: "999" }, // AND — this group fails (no spell 999)
     ];
     expect(evaluateFilters(filters, createDamageEvent(), createContext())).toBe(false);
@@ -99,7 +99,7 @@ describe("evaluateFilters", () => {
 
   it("parses comma separated values", () => {
     const filters: PanelFilter[] = [
-      { type: "ability_name", value: "shadow, fire" },
+      { type: "ability_name", value: "shadow bolt, fireball" },
     ];
     expect(evaluateFilters(filters, createDamageEvent(), createContext())).toBe(true);
   });
@@ -123,10 +123,10 @@ describe("evaluateFilters", () => {
   it("default combinator is AND", () => {
     // Two filters with no combinator → both must match
     const filters: PanelFilter[] = [
-      { type: "ability_name", value: "fire" },
-      { type: "ability_name", value: "shadow" }, // no combinator = AND, new group
+      { type: "ability_name", value: "fireball" },
+      { type: "ability_name", value: "shadow bolt" }, // no combinator = AND, new group
     ];
-    // "fire" matches but "shadow" doesn't → false
+    // "fireball" matches but "shadow bolt" doesn't → false
     expect(evaluateFilters(filters, createDamageEvent(), createContext())).toBe(false);
   });
 

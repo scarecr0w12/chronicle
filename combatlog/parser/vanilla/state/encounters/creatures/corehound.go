@@ -1,6 +1,8 @@
 package creatures
 
 import (
+	"time"
+
 	"github.com/Emyrk/chronicle/combatlog/parser/common/characters"
 	"github.com/Emyrk/chronicle/combatlog/parser/guid"
 	"github.com/Emyrk/chronicle/combatlog/parser/types"
@@ -21,13 +23,20 @@ func NewCoreHoundCharacter(id guid.GUID, all *characters.Characters) (characters
 		return nil, false
 	}
 
+	c := characters.NewCommonCharacter(id, all)
+	c.SetRecentlySlainDuration(time.Second * 10)
 	return &CoreHound{
-		Common: characters.NewCommonCharacter(id, all),
+		Common: c,
 	}, true
 }
 
 func (c *CoreHound) Process(m messages.Message) error {
 	switch data := m.(type) {
+	case *messages.Aura:
+		if data.Target == c.ID() {
+			// Auras are causing issues
+			return nil
+		}
 	case *messages.Damage:
 		// CoreHounds when they die can still be attacked, but all damage is resisted or
 		// absorbed, resulting in 0 damage. This means the corehound is still dead. If we

@@ -460,17 +460,35 @@ func (w *WorkerLogParse) Work(ctx context.Context, job *river.Job[ArgsLogParse])
 			}
 		}
 
-		var realmID = dbstatic.RealmUnknown()
+		var realmID uuid.UUID
 		if finalized.Realm != nil {
-			foundRealm, ok := dbstatic.RealmByName(finalized.Realm.RealmName)
-			if ok {
-				realmID = foundRealm
+			realm, err := db.GetWoWServerRealmByName(ctx, finalized.Realm.RealmName)
+			if err == nil {
+				realmID = realm.ID
 			}
 		}
 		// Fallback: use realm ID from job args (e.g. AzerothCore uploads
 		// where REALM_INFO is not present in the combat log).
-		if realmID == dbstatic.RealmUnknown() && job.Args.RealmID != uuid.Nil {
+		if realmID == uuid.Nil && job.Args.RealmID != uuid.Nil {
 			realmID = job.Args.RealmID
+		}
+		// Final fallback: use the "Unknown" realm so FK constraints are
+		// satisfied. If it doesn't exist yet, create it with the well-known
+		// UUIDs from dbstatic.
+		if realmID == uuid.Nil {
+			realmID = dbstatic.RealmUnknown()
+			_, err := db.GetWoWServerRealm(ctx, realmID)
+			if err != nil {
+				_, _ = db.InsertWoWServer(ctx, database.InsertWoWServerParams{
+					ID:   dbstatic.ServerUnknown(),
+					Name: "Unknown",
+				})
+				_, _ = db.InsertWoWServerRealm(ctx, database.InsertWoWServerRealmParams{
+					ID:       realmID,
+					ServerID: dbstatic.ServerUnknown(),
+					Name:     "Unknown",
+				})
+			}
 		}
 
 		// Time DB insert

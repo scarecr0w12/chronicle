@@ -50,12 +50,14 @@ import {
 import { GuildPage, GuildPageEditor, GuildRoster, GuildSettings } from "./pages/GuildPage"
 import { ArmoryPage } from "./pages/ArmoryPage"
 import { ArmorySearchPage } from "./pages/ArmorySearch"
+import { GuildSearchPage } from "./pages/GuildSearch"
 import { SimPage } from "./pages/Sim"
 import { GameDataLayout } from "./pages/GameData/GameDataPage"
 import { WDBTab } from "./pages/GameData/WDBTab"
 import { ImportSQLTab } from "./pages/GameData/ImportSQLTab"
 import { DBCTab } from "./pages/GameData/DBCTab"
 import { SpeedrunLeaderboard } from "./pages/Leaderboard/SpeedrunLeaderboard"
+import { CensusPage } from "./pages/Census/CensusPage"
 import { Layout } from "./components/Layout/Layout"
 
 // Backend-handled paths that should bypass React Router
@@ -89,10 +91,12 @@ function App() {
         <Route path="/logs/file/:fileHash" element={<LogDetailByHash />} />
         <Route path="/instances/:instanceId" element={<InstancePage />} />
         <Route path="/s/:code" element={<SharedViewRedirect />} />
+        <Route path="/guilds" element={<GuildSearchPage />} />
         <Route path="/armory" element={<ArmorySearchPage />} />
         <Route path="/armory/:realmName/:playerIdentifier" element={<ArmoryPage />} />
         <Route path="/sim" element={<SimPage />} />
         <Route path="/leaderboard" element={<SpeedrunLeaderboard />} />
+        <Route path="/census" element={<CensusPage />} />
         <Route path="/debug/proto" element={<ProtoDecode />} />
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="/admin/users-overview" replace />} />

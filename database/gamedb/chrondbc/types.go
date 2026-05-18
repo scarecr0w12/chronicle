@@ -1,6 +1,9 @@
 package chrondbc
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/Emyrk/chronicle/combatlog/parser/types"
 	"github.com/Emyrk/chronicle/database/gamedb/chrondbc/dbcmem"
 	"github.com/Emyrk/chronicle/internal/bitmask"
@@ -8,6 +11,18 @@ import (
 
 type ItemID int32
 type SpellID int32
+
+type SpellNotFound SpellID
+
+func (s SpellNotFound) Error() string {
+	return fmt.Sprintf("spell with ID %d not found", s)
+}
+
+func IsSpellNotFound(err error) bool {
+	var as SpellNotFound
+	return errors.As(err, &as)
+}
+
 type IconID int32
 
 func (i IconID) Get() dbcmem.SpellIcon {

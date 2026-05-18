@@ -199,20 +199,20 @@ func (api *API) WoWLogFileDownload(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	actor, _ := authz.ActorFromContext(ctx)
-	// Check admin_logs permission on global chronicle
-	ok, err := api.Zed.CheckOne(ctx, nil, policy.New().GlobalChronicle().CanAdmin_logs_User(actor))
-	if !ok || err != nil {
-		httpapi.Forbidden(w, err)
-		return
-	}
-
-	// Get file metadata
+	// Get file metadata first to find the log group
 	file, err := api.Opts.Zed.GetLogFile(ctx, fileID)
 	if err != nil {
 		httpapi.Write(ctx, w, http.StatusNotFound, chroniclesdk.Response{
 			Message: "File not found",
 		})
+		return
+	}
+
+	actor, _ := authz.ActorFromContext(ctx)
+	// Check if user can view the raid log this file belongs to
+	ok, err := api.Zed.CheckOne(ctx, nil, policy.New().Raid_log(file.WowLogID).CanView_User(actor))
+	if !ok || err != nil {
+		httpapi.Forbidden(w, err)
 		return
 	}
 

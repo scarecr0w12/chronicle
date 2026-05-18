@@ -246,7 +246,7 @@ func (z *Authz) SetUserChronicleRoles(ctx context.Context, userID uuid.UUID, rol
 		case "admin_raid_requirements":
 			gChron.Is_admin_raid_requirements(usr)
 		default:
-			return fmt.Errorf("invalid role: %s", role)
+			continue
 		}
 	}
 

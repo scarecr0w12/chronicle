@@ -17,7 +17,7 @@ import (
 func (h *Handler) handleCreatureUpload(ctx context.Context, w http.ResponseWriter, mode string, wdbHeader wdb.Header, records []wdb.Record) {
 	creatures := make([]wdb.Creature, 0, len(records))
 	for _, rec := range records {
-		c, err := wdb.ParseCreature(rec)
+		c, err := wdb.ParseCreature(rec, wdbHeader.Version)
 		if err != nil {
 			httpapi.Write(ctx, w, http.StatusBadRequest, chroniclesdk.Response{
 				Message: fmt.Sprintf("Failed to parse creature entry %d", rec.EntryID),

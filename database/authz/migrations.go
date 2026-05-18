@@ -19,6 +19,7 @@ type AuthzMigration struct {
 // To add a new migration, append an entry with the next version number.
 var migrations = []AuthzMigration{
 	{Version: 1, Run: migration001},
+	{Version: 2, Run: migration002},
 }
 
 // RunSchemaMigrations runs any authz migrations not yet recorded in the
@@ -79,6 +80,36 @@ func migration001(ctx context.Context, az *Authz) error {
 		Wow_server(b.Wow_server(epoch))
 	b.Wow_server_realm(uuid.MustParse("140eaa55-317d-4299-8756-83f495efba15")).
 		Wow_server(b.Wow_server(epoch))
+
+	// TOUCH is idempotent — safe to run on every startup.
+	_, err := az.Write(ctx, *b.Txn())
+	return err
+}
+
+// migration002 seeds servers and realms
+func migration002(ctx context.Context, az *Authz) error {
+	b := policy.New()
+	chron := b.GlobalChronicle()
+
+	turtlesa := uuid.MustParse("eaa7e20e-ae86-4690-98e0-dde0b9f06cd0")
+	turtleasia := uuid.MustParse("9750514d-be08-4700-bce7-4108916b7ea0")
+
+	b.Wow_server(turtlesa).Chronicle(chron)
+	b.Wow_server(turtleasia).Chronicle(chron)
+
+	// Realms — turtle-wow
+	b.Wow_server_realm(uuid.MustParse("ad486d39-31dd-4eb6-a43d-7d469df4ffcf")).
+		Wow_server(b.Wow_server(turtlesa)) // South Seas
+
+	// Realms — turtle-asia
+	b.Wow_server_realm(uuid.MustParse("c240e1e4-9d2b-46f7-b23c-6b55a37b4710")).
+		Wow_server(b.Wow_server(turtleasia))
+	b.Wow_server_realm(uuid.MustParse("885cd224-aa71-4592-81e2-98fe138ca650")).
+		Wow_server(b.Wow_server(turtleasia))
+	b.Wow_server_realm(uuid.MustParse("0f9825e5-8a88-4bfb-80f6-26b472c7a1aa")).
+		Wow_server(b.Wow_server(turtleasia))
+	b.Wow_server_realm(uuid.MustParse("5f786828-1c60-4360-8b0f-14b7b494be3a")).
+		Wow_server(b.Wow_server(turtleasia))
 
 	// TOUCH is idempotent — safe to run on every startup.
 	_, err := az.Write(ctx, *b.Txn())

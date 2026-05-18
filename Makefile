@@ -220,3 +220,7 @@ test-postgres-docker:
 .PHONY: docs
 docs:
 	cd docs && pnpm dev
+
+.PHONY: landing
+landing:
+	cd frontend/landing && pnpm install && pnpm build

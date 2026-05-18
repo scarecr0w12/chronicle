@@ -77,9 +77,7 @@ func collectTalentTrees(wc *dbcdb.WoWClient) (*talentTreeData, error) {
 	err = iconsDBC.Range(func(cursor *dbdefs.Ent_SpellIcon) bool {
 		name := cursor.TextureFilename
 		// Strip prefix like the spellicons generator does
-		if len(name) > 16 && name[:16] == "Interface\\Icons\\" {
-			name = name[16:]
-		}
+		name = cutIconPrefix(name)
 		iconMap[cursor.ID] = name
 		return true
 	})

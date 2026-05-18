@@ -11,7 +11,7 @@ import {
   DropdownMenuCheckboxItem,
   DropdownMenuItem,
 } from "@/components/ui/DropdownMenu/DropdownMenu";
-import { useSupportedInstances } from "@/api/queries";
+import { useSupportedInstances, useRealms } from "@/api/queries";
 import { useUrlState, serializers } from "@/hooks/useUrlState";
 import {
   getInstanceCategory,
@@ -24,17 +24,6 @@ const API_BASE = "/api/v1/raidlogs";
 
 type CategoryFilter = "all" | "raid" | "dungeon";
 type VideoFilter = "all" | "with";
-
-const REALM_OPTIONS = [
-  { id: "851d2fd3-f9c5-4623-b714-924b59d916aa", name: "Ambershire" },
-  { id: "f94d3103-1cd8-40e9-ad91-a2366de33354", name: "Tel Abim" },
-  { id: "bcf173a7-c94a-49fe-8930-27435d722fb7", name: "Nordanaar" },
-  { id: "ad486d39-31dd-4eb6-a43d-7d469df4ffcf", name: "South Seas" },
-  { id: "c240e1e4-9d2b-46f7-b23c-6b55a37b4710", name: "Gehennas" },
-  { id: "885cd224-aa71-4592-81e2-98fe138ca650", name: "Ravenstorm" },
-  { id: "0f9825e5-8a88-4bfb-80f6-26b472c7a1aa", name: "Karazhan" },
-  { id: "5f786828-1c60-4360-8b0f-14b7b494be3a", name: "Blood Ring" },
-] as const;
 
 function parseCategoryFilter(value: string): CategoryFilter {
   if (value === "raid" || value === "dungeon") {
@@ -50,13 +39,6 @@ function parseVideoFilter(value: string): VideoFilter {
   return "all";
 }
 
-function parseRealmFilter(value: string): string {
-  if (REALM_OPTIONS.some((realm) => realm.id === value)) {
-    return value;
-  }
-  return "";
-}
-
 export function RecentRaids() {
   const [instances, setInstances] = useState<RecentInstance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -65,15 +47,15 @@ export function RecentRaids() {
   const [hasMore, setHasMore] = useState(false);
 
   const { data: supportedInstances } = useSupportedInstances();
+  const { data: realms } = useRealms();
 
   const [rawCategory, setRawCategory] = useUrlState("cat", "all", serializers.string);
   const [selectedInstances, setSelectedInstances] = useUrlState("inst", [], serializers.stringArray);
   const [rawVideoFilter, setRawVideoFilter] = useUrlState("vid", "all", serializers.string);
-  const [rawRealmID, setRawRealmID] = useUrlState("realm", "", serializers.string);
+  const [realmID, setRealmID] = useUrlState("realm", "", serializers.string);
 
   const category = parseCategoryFilter(rawCategory);
   const videoFilter = parseVideoFilter(rawVideoFilter);
-  const realmID = parseRealmFilter(rawRealmID);
 
   // useUrlState(stringArray) deserializes to a new array each render, so stabilize it.
   const selectedInstancesKey = useMemo(
@@ -202,22 +184,15 @@ export function RecentRaids() {
       return;
     }
 
-    if (rawRealmID !== realmID) {
-      setRawRealmID(realmID);
-      return;
-    }
-
     setHasMore(false);
     fetchInstances();
   }, [
     category,
     fetchInstances,
     rawCategory,
-    rawRealmID,
     rawVideoFilter,
     realmID,
     setRawCategory,
-    setRawRealmID,
     setRawVideoFilter,
     videoFilter,
   ]);
@@ -300,10 +275,10 @@ export function RecentRaids() {
           <select
             className="h-9 rounded-md border border-input bg-background px-3 py-1 text-sm"
             value={realmID}
-            onChange={(event) => setRawRealmID(event.target.value)}
+            onChange={(event) => setRealmID(event.target.value)}
           >
             <option value="">All</option>
-            {REALM_OPTIONS.map((realm) => (
+            {realms?.map((realm) => (
               <option key={realm.id} value={realm.id}>
                 {realm.name}
               </option>

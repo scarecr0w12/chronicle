@@ -11,6 +11,7 @@ import (
 	"github.com/Emyrk/chronicle/combatlog/parser/types"
 	"github.com/Emyrk/chronicle/database/gamedb"
 	"github.com/Emyrk/chronicle/database/gamedb/chrondbc"
+	"github.com/Emyrk/chronicle/internal/ptr"
 )
 
 type Matched struct {
@@ -192,6 +193,19 @@ func (m *Matched) Uint32() uint32 {
 	})
 }
 
+func (m *Matched) OptionalUint32() uint32 {
+	return parseMatch(m, func(s string) (uint32, error) {
+		if s == "" || s == "nil" {
+			return 0, nil
+		}
+		u, err := strconv.ParseUint(s, 10, 32)
+		if err != nil {
+			return 0, err
+		}
+		return uint32(u), nil
+	})
+}
+
 func (m *Matched) Int32() int32 {
 	return int32(m.Int64())
 }
@@ -294,6 +308,13 @@ func (m *Matched) DBCSpellByID(db gamedb.SpellFetcher) *chrondbc.Spell {
 			return nil, nil
 		}
 
-		return db.Spell(chrondbc.SpellID(int32(id)))
+		spell, err := db.Spell(chrondbc.SpellID(int32(id)))
+		if err != nil {
+			if chrondbc.IsSpellNotFound(err) {
+				return ptr.Ref(chrondbc.UnknownSpell(chrondbc.SpellID(id))), nil
+			}
+			return nil, err
+		}
+		return spell, nil
 	})
 }

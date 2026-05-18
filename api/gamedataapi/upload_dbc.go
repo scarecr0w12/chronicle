@@ -63,12 +63,17 @@ func (h *Handler) UploadDBC(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Try to open as ItemDisplayInfo.dbc, auto-detecting the build version.
+	dbcType := r.URL.Query().Get("dbc_type")
+	if dbcType == "" {
+		dbcType = "ItemDisplayInfo" // backwards compat
+	}
+
+	// Try to open the DBC file, auto-detecting the build version.
 	var table *dbc.Table
 	var lastErr error
 	for _, build := range knownBuilds {
 		d := dbc.NewDB(build)
-		t, err := d.Open("ItemDisplayInfo", bytes.NewReader(data))
+		t, err := d.Open(dbcType, bytes.NewReader(data))
 		if err != nil {
 			lastErr = err
 			continue
@@ -78,17 +83,28 @@ func (h *Handler) UploadDBC(w http.ResponseWriter, r *http.Request) {
 	}
 	if table == nil {
 		httpapi.Write(ctx, w, http.StatusBadRequest, chroniclesdk.Response{
-			Message: "Failed to parse DBC file as ItemDisplayInfo (tried vanilla, TBC, WotLK builds)",
+			Message: fmt.Sprintf("Failed to parse DBC file as %s (tried vanilla, TBC, WotLK builds)", dbcType),
 			Detail:  lastErr.Error(),
 		})
 		return
 	}
 
-	h.handleItemDisplayInfoUpload(ctx, w, mode, table)
+	switch dbcType {
+	case "ItemDisplayInfo":
+		h.handleItemDisplayInfoUpload(ctx, w, mode, table)
+	case "SpellItemEnchantment":
+		h.handleSpellItemEnchantmentUpload(ctx, w, mode, table)
+	default:
+		httpapi.Write(ctx, w, http.StatusBadRequest, chroniclesdk.Response{
+			Message: fmt.Sprintf("Unsupported DBC type: %s", dbcType),
+		})
+	}
 }
 
 func (h *Handler) handleItemDisplayInfoUpload(ctx context.Context, w http.ResponseWriter, mode string, table *dbc.Table) {
 	var rows []dbdefs.Ent_ItemDisplayInfo
+	var x dbdefs.Ent_ItemDisplayInfo
+	_ = table.ID(50182, &x)
 	err := table.Range(func(cursor *dbdefs.Ent_ItemDisplayInfo) bool {
 		// Copy the struct so we own the data.
 		rows = append(rows, *cursor)
@@ -219,3 +235,95 @@ func jsonSlice(v any) []byte {
 	}
 	return b
 }
+func (h *Handler) handleSpellItemEnchantmentUpload(ctx context.Context, w http.ResponseWriter, mode string, table *dbc.Table) {
+	var rows []dbdefs.Ent_SpellItemEnchantment
+	err := table.Range(func(cursor *dbdefs.Ent_SpellItemEnchantment) bool {
+		rows = append(rows, *cursor)
+		return true
+	})
+	if err != nil {
+		httpapi.Write(ctx, w, http.StatusInternalServerError, chroniclesdk.Response{
+			Message: "Failed to iterate DBC rows",
+			Detail:  err.Error(),
+		})
+		return
+	}
+
+	resp := chroniclesdk.DBCUploadResponse{
+		DBCName:     "SpellItemEnchantment",
+		RecordCount: len(rows),
+		Mode:        mode,
+	}
+
+	if mode == "compare" {
+		resp.Inserted = len(rows)
+		httpapi.Write(ctx, w, http.StatusOK, resp)
+		return
+	}
+
+	const batchSize = 500
+
+	const sieSQL = `INSERT INTO dbc_spell_item_enchantment (
+			id, charges, effect_1, effect_2, effect_3,
+			effect_points_min_1, effect_points_min_2, effect_points_min_3,
+			effect_arg_1, effect_arg_2, effect_arg_3,
+			name_lang, item_visual, flags, src_item_id,
+			condition_id, required_skill_id, required_skill_rank,
+			min_level, max_level
+		) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+		ON CONFLICT (id) DO UPDATE SET
+			charges=EXCLUDED.charges,
+			effect_1=EXCLUDED.effect_1, effect_2=EXCLUDED.effect_2, effect_3=EXCLUDED.effect_3,
+			effect_points_min_1=EXCLUDED.effect_points_min_1, effect_points_min_2=EXCLUDED.effect_points_min_2,
+			effect_points_min_3=EXCLUDED.effect_points_min_3,
+			effect_arg_1=EXCLUDED.effect_arg_1, effect_arg_2=EXCLUDED.effect_arg_2, effect_arg_3=EXCLUDED.effect_arg_3,
+			name_lang=EXCLUDED.name_lang, item_visual=EXCLUDED.item_visual, flags=EXCLUDED.flags,
+			src_item_id=EXCLUDED.src_item_id, condition_id=EXCLUDED.condition_id,
+			required_skill_id=EXCLUDED.required_skill_id, required_skill_rank=EXCLUDED.required_skill_rank,
+			min_level=EXCLUDED.min_level, max_level=EXCLUDED.max_level`
+
+	batch := &pgx.Batch{}
+	for _, row := range rows {
+		batch.Queue(sieSQL,
+			row.ID, row.Charges,
+			int32At(row.Effect, 0), int32At(row.Effect, 1), int32At(row.Effect, 2),
+			int32At(row.EffectPointsMin, 0), int32At(row.EffectPointsMin, 1), int32At(row.EffectPointsMin, 2),
+			int32At(row.EffectArg, 0), int32At(row.EffectArg, 1), int32At(row.EffectArg, 2),
+			row.Name_lang.String(), row.ItemVisual, row.Flags, row.Src_itemID,
+			row.Condition_ID, row.RequiredSkillID, row.RequiredSkillRank,
+			row.MinLevel, row.MaxLevel,
+		)
+
+		if batch.Len() >= batchSize {
+			if err := flushBatch(ctx, h.pool, batch); err != nil {
+				httpapi.Write(ctx, w, http.StatusInternalServerError, chroniclesdk.Response{
+					Message: "Failed to write batch",
+					Detail:  err.Error(),
+				})
+				return
+			}
+			batch = &pgx.Batch{}
+		}
+	}
+	if batch.Len() > 0 {
+		if err := flushBatch(ctx, h.pool, batch); err != nil {
+			httpapi.Write(ctx, w, http.StatusInternalServerError, chroniclesdk.Response{
+				Message: "Failed to write final batch",
+				Detail:  err.Error(),
+			})
+			return
+		}
+	}
+
+	resp.Inserted = len(rows)
+	httpapi.Write(ctx, w, http.StatusOK, resp)
+}
+
+// int32At safely indexes an int32 slice, returning 0 if out of bounds.
+func int32At(s []int32, i int) int32 {
+	if i < len(s) {
+		return s[i]
+	}
+	return 0
+}
+

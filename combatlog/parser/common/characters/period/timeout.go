@@ -1,6 +1,7 @@
 package period
 
 import (
+	"strings"
 	"time"
 
 	"github.com/Emyrk/chronicle/combatlog/parser/guid"
@@ -114,6 +115,8 @@ func (p *InactivityPeriod) HandleTimeout(now time.Time) bool {
 		p.Timeout("inactivity", p.Meta.NextTimeout)
 		if p.timeoutAsDeath {
 			p.EndState = EndStateSlain
+		} else if strings.HasPrefix(p.LastActive.Reason, "cc_") {
+			p.EndState = EndStateReset
 		}
 		return true
 	}

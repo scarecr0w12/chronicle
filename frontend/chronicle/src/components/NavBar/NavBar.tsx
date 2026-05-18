@@ -1,10 +1,10 @@
 import { useMemo, useState } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Settings, Upload, LogOut, FileText, Shield, Key, Castle, Menu, Swords, Trophy, Database, Server } from "lucide-react";
+import { Settings, Upload, LogOut, FileText, Shield, Key, Castle, Menu, Swords, Trophy, Database, Server, Users, Compass } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { serverCapabilities } from "@/config/serverCapabilities";
 import { useAuth } from "@/hooks/useAuth";
-import { useAuthorizationCheck } from "@/api/queries";
+import { useAuthorizationCheck, useSiteConfig } from "@/api/queries";
 import { Button } from "../ui/button";
 import {
   Sheet,
@@ -35,6 +35,7 @@ export function NavBar() {
     adminWorldData: "chronicle:chronicle#admin_world_data",
     canAdminSomeServer: "lookup:wow_server#administer",
     adminServers: "chronicle:chronicle#admin_servers",
+    adminLogs: "chronicle:chronicle#admin_logs",
   }), []);
   const { data: authz } = useAuthorizationCheck(authzChecks, {
     enabled: isAuthenticated,
@@ -43,10 +44,14 @@ export function NavBar() {
   const canAdminAuthz = authz?.adminAuthz ?? false;
   const canAdminWorldData = authz?.adminWorldData ?? false;
   const canManageServers = (authz?.canAdminSomeServer ?? false) || (authz?.adminServers ?? false);
+  const hasAdminLogs = authz?.adminLogs ?? false;
+
+  const { data: siteConfig } = useSiteConfig();
+  const uploadsEnabled = !siteConfig?.client_uploads_disabled || hasAdminLogs;
 
   const accountMenuItems: NavItem[] = [
-    { title: "My Logs", href: "/logs", icon: FileText },
-    { title: "Upload", href: "/upload", icon: Upload },
+    ...(uploadsEnabled ? [{ title: "My Logs", href: "/logs", icon: FileText } as NavItem] : []),
+    ...(uploadsEnabled ? [{ title: "Upload", href: "/upload", icon: Upload } as NavItem] : []),
     ...(isAdmin ? [{ title: "Admin", href: "/admin", icon: Shield } as NavItem] : []),
     ...(canAdminWorldData ? [{ title: "Game Data", href: "/game-data", icon: Database } as NavItem] : []),
     ...(canManageServers ? [{ title: "Servers", href: "/servers", icon: Server } as NavItem] : []),
@@ -130,6 +135,14 @@ export function NavBar() {
                 <Trophy className="h-4 w-4" />
                 Leaderboards
               </Link>
+              <Link
+                to="/census"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors py-2"
+              >
+                <Users className="h-4 w-4" />
+                Census
+              </Link>
               {isAuthenticated && (
                 <>
                   <div className="border-t my-2" />
@@ -170,22 +183,36 @@ export function NavBar() {
           <Castle className="h-4 w-4" />
           Recent Raids
         </Link>
-        {serverCapabilities.armory && (
-          <Link
-            to="/armory"
-            className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-          >
-            <Swords className="h-4 w-4" />
-            Armory
-          </Link>
-        )}
-        <Link
-          to="/leaderboard"
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-        >
-          <Trophy className="h-4 w-4" />
-          Leaderboards
-        </Link>
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors">
+              <Compass className="h-4 w-4" />
+              Explore
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-[180px]">
+            {serverCapabilities.armory && (
+              <DropdownMenuItem asChild>
+                <Link to="/armory" className="flex items-center gap-2">
+                  <Swords className="h-4 w-4" />
+                  Armory
+                </Link>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem asChild>
+              <Link to="/leaderboard" className="flex items-center gap-2">
+                <Trophy className="h-4 w-4" />
+                Leaderboards
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild>
+              <Link to="/census" className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                Census
+              </Link>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
         {isLoading ? null : isAuthenticated ? (
           <DropdownMenu modal={false}>
             <DropdownMenuTrigger asChild>

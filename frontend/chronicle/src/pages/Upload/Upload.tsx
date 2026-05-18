@@ -8,7 +8,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/Alert/Alert
 import { Switch } from "@/components/ui/Switch/Switch";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/hooks/useAuth";
-import { useAuthorizationCheck } from "@/api/queries";
+import { useAuthorizationCheck, useSiteConfig } from "@/api/queries";
 
 /** Reusable file drop zone — supports click-to-browse and drag-and-drop. */
 function FileDropZone({
@@ -103,7 +103,7 @@ function FileDropZone({
 const LOG_TYPE_OPTIONS = [
   { value: "", label: "Default (server)" },
   { value: "v1", label: "V1 (Vanilla addon)" },
-  { value: "v2", label: "V2 (Turtle WoW)" },
+  { value: "v2", label: "V2 (ChronicleCompanion Addon)" },
   { value: "warmane", label: "Warmane (WotLK)" },
   { value: "epoch", label: "Epoch" },
   { value: "kronos", label: "Kronos" },
@@ -381,7 +381,7 @@ export function UploadView({
         <div className="flex items-center gap-2 mb-4">
           <Info className="h-5 w-5 text-muted-foreground" />
           <h2 className="font-semibold">
-            {useV2Upload ? "Raid Log Uploading (Version 2)" : "Raid Log Uploading"}
+            {useV2Upload ? "Raid Log Uploading" : "Raid Log Uploading"}
           </h2>
         </div>
 
@@ -392,24 +392,59 @@ export function UploadView({
                 <h3 className="font-medium mb-2">Requirements</h3>
                 <ul className="list-disc list-inside space-y-1 text-muted-foreground">
                   <li>
-                    <a href="https://github.com/balakethelock/SuperWoW" target="_blank" rel="noopener noreferrer" className="text-link hover:underline">
-                      SuperWoW Mod
+                    <a href="https://github.com/Emyrk/ChronicleCompanion/" target="_blank" rel="noopener noreferrer" className="text-link hover:underline">
+                      ChronicleCompanion Addon
                     </a>
                   </li>
                   <li>
                     <a href="https://gitea.com/avitasia/nampower" target="_blank" rel="noopener noreferrer" className="text-link hover:underline">
                       Nampower
                     </a>
-                  </li>
-                  <li>
-                    <a href="https://codeberg.org/konaka/UnitXP_SP3" target="_blank" rel="noopener noreferrer" className="text-link hover:underline">
-                      UnitXP3
-                    </a>
-                  </li>
-                  <li>
-                    <a href="https://github.com/Emyrk/ChronicleCompanion/" target="_blank" rel="noopener noreferrer" className="text-link hover:underline">
-                      ChronicleCompanion Addon
-                    </a>
+                    <details className="mt-2 rounded-md border border-border/70 bg-muted/20">
+                      <summary className="cursor-pointer list-none px-3 py-2 text-sm font-medium hover:bg-muted/40">
+                        How to install Nampower
+                      </summary>
+                      <div className="px-3 pb-3 space-y-3 text-muted-foreground text-sm">
+                        <p>
+                          Nampower is a DLL mod — it requires a DLL loader like{" "}
+                          <a href="https://github.com/hannesmann/vanillafixes" target="_blank" rel="noopener noreferrer" className="text-link hover:underline">
+                            VanillaFixes
+                          </a>
+                          {" "}to run.
+                        </p>
+                        <div>
+                          <p className="font-medium text-foreground mb-1">1. Install VanillaFixes (DLL loader)</p>
+                          <ol className="list-decimal list-inside space-y-1 ml-1">
+                            <li>Go to the{" "}
+                              <a href="https://github.com/hannesmann/vanillafixes/releases" target="_blank" rel="noopener noreferrer" className="text-link hover:underline">
+                                VanillaFixes releases page
+                              </a>
+                            </li>
+                            <li>Download the latest release zip</li>
+                            <li>Extract <code className="bg-muted px-1.5 py-0.5 rounded text-xs">VanillaFixes.exe</code> and <code className="bg-muted px-1.5 py-0.5 rounded text-xs">VfPatcher.dll</code> into your WoW folder (the same directory as <code className="bg-muted px-1.5 py-0.5 rounded text-xs">WoW.exe</code>)</li>
+                          </ol>
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground mb-1">2. Install Nampower</p>
+                          <ol className="list-decimal list-inside space-y-1 ml-1">
+                            <li>Go to the{" "}
+                              <a href="https://gitea.com/avitasia/nampower/releases" target="_blank" rel="noopener noreferrer" className="text-link hover:underline">
+                                Nampower releases page
+                              </a>
+                            </li>
+                            <li>Download the latest <code className="bg-muted px-1.5 py-0.5 rounded text-xs">nampower.dll</code></li>
+                            <li>Place it in your WoW folder (the same directory as <code className="bg-muted px-1.5 py-0.5 rounded text-xs">WoW.exe</code>)</li>
+                            <li>Create or edit <code className="bg-muted px-1.5 py-0.5 rounded text-xs">dlls.txt</code> in the same folder and add <code className="bg-muted px-1.5 py-0.5 rounded text-xs">nampower.dll</code> on its own line</li>
+                          </ol>
+                        </div>
+                        <div>
+                          <p className="font-medium text-foreground mb-1">3. Launch the game</p>
+                          <p className="ml-1">
+                            Run <code className="bg-muted px-1.5 py-0.5 rounded text-xs">VanillaFixes.exe</code> instead of <code className="bg-muted px-1.5 py-0.5 rounded text-xs">WoW.exe</code>. VanillaFixes automatically loads DLLs listed in <code className="bg-muted px-1.5 py-0.5 rounded text-xs">dlls.txt</code>, including nampower.
+                          </p>
+                        </div>
+                      </div>
+                    </details>
                   </li>
                 </ul>
               </div>
@@ -421,25 +456,25 @@ export function UploadView({
               <div>
                 <h3 className="font-medium mb-2">On Raid Night</h3>
                 <div className="space-y-3 text-muted-foreground">
-                  <p className="italic">Optional: Configure the addon with <code className="bg-muted px-1.5 py-0.5 rounded text-xs">/chronicle config</code></p>
+                  <p className="italic">Optional: Configure the addon with <code className="bg-muted px-1.5 py-0.5 rounded text-xs">/clog config</code></p>
                   <div>
                     <p className="mb-1"><strong className="text-foreground">1. Prepare the logs</strong></p>
                     <ul className="list-none ml-4">
-                      <li>Type <code className="bg-muted px-1.5 py-0.5 rounded text-xs">/chron delete</code> to delete any existing logs</li>
+                      <li>Type <code className="bg-muted px-1.5 py-0.5 rounded text-xs">/clog delete</code> to delete any existing logs</li>
                     </ul>
                   </div>
                   <p><strong className="text-foreground">2. Do your raid</strong></p>
                   <div>
                     <p><strong className="text-foreground">3. Save your logs</strong></p>
                     <ul className="list-none ml-4">
-                      <li>Type <code className="bg-muted px-1.5 py-0.5 rounded text-xs">/chron save</code> to save the logs to disk</li>
+                      <li>Type <code className="bg-muted px-1.5 py-0.5 rounded text-xs">/clog save</code> to save the logs to disk</li>
                     </ul>
                   </div>
                   
                   <div>
                     <p className="mb-1"><strong className="text-foreground">4. Upload the file:</strong></p>
                     <ul className="list-none ml-4">
-                      <li><code className="bg-muted px-1.5 py-0.5 rounded text-xs">&lt;TurtleWoWFolder&gt;/CustomData/Chronicle_&lt;character_name&gt;.txt</code></li>
+                      <li><code className="bg-muted px-1.5 py-0.5 rounded text-xs">&lt;WoWFolder&gt;/CustomData/Chronicle_&lt;character_name&gt;.txt</code></li>
                     </ul>
                   </div>
                 </div>
@@ -482,16 +517,16 @@ export function UploadView({
                   <div>
                     <p className="mb-1">1. <strong className="text-foreground">Delete these files before raiding:</strong></p>
                     <ul className="list-none space-y-1 ml-4">
-                      <li><code className="bg-muted px-1.5 py-0.5 rounded text-xs">&lt;TurtleWoWFolder&gt;/Logs/WoWCombatLog.txt</code></li>
-                      <li><code className="bg-muted px-1.5 py-0.5 rounded text-xs">&lt;TurtleWoWFolder&gt;/Logs/WoWRawCombatLog.txt</code></li>
+                      <li><code className="bg-muted px-1.5 py-0.5 rounded text-xs">&lt;WoWFolder&gt;/Logs/WoWCombatLog.txt</code></li>
+                      <li><code className="bg-muted px-1.5 py-0.5 rounded text-xs">&lt;WoWFolder&gt;/Logs/WoWRawCombatLog.txt</code></li>
                     </ul>
                   </div>
                   <p>2. <strong className="text-foreground">Launch WoW and do your raid.</strong></p>
                   <div>
                     <p className="mb-1">3. <strong className="text-foreground">Upload both files</strong> (required):</p>
                     <ul className="list-none space-y-1 ml-4">
-                      <li><code className="bg-muted px-1.5 py-0.5 rounded text-xs">&lt;TurtleWoWFolder&gt;/Logs/WoWCombatLog.txt</code></li>
-                      <li><code className="bg-muted px-1.5 py-0.5 rounded text-xs">&lt;TurtleWoWFolder&gt;/Logs/WoWRawCombatLog.txt</code></li>
+                      <li><code className="bg-muted px-1.5 py-0.5 rounded text-xs">&lt;WoWFolder&gt;/Logs/WoWCombatLog.txt</code></li>
+                      <li><code className="bg-muted px-1.5 py-0.5 rounded text-xs">&lt;WoWFolder&gt;/Logs/WoWRawCombatLog.txt</code></li>
                     </ul>
                   </div>
                 </div>
@@ -545,6 +580,10 @@ export function Upload() {
   });
   const hasUploadPermission = authz?.upload ?? false;
   const hasAdminLogs = authz?.adminLogs ?? false;
+
+  const { data: siteConfig } = useSiteConfig();
+  const uploadsDisabled = siteConfig?.client_uploads_disabled && !hasAdminLogs;
+
   const [combatLog, setCombatLog] = useState<File | null>(null);
   const [rawCombatLog, setRawCombatLog] = useState<File | null>(null);
   const [logTypeOverride, setLogTypeOverride] = useState("");
@@ -698,6 +737,20 @@ export function Upload() {
       });
     }
   }, [combatLog, rawCombatLog, useV2Upload, logTypeOverride]);
+
+  if (uploadsDisabled) {
+    return (
+      <div className="container max-w-2xl mx-auto py-12 px-4 text-center">
+        <Card className="p-8">
+          <AlertCircle className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+          <h2 className="text-xl font-semibold mb-2">Uploads Disabled</h2>
+          <p className="text-muted-foreground">
+            This server uses server-side logging. Client-side uploads are not available.
+          </p>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <UploadView

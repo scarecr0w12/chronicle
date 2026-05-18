@@ -18,6 +18,7 @@ import (
 	"github.com/Emyrk/chronicle/combatlog/parser/wotlk"
 	"github.com/Emyrk/chronicle/database/gamedb"
 	"github.com/Emyrk/chronicle/database/gamedb/chrondbc"
+	"github.com/Emyrk/chronicle/internal/ptr"
 )
 
 // Parser wraps the WotLK parser and handles Chronicle-specific extension
@@ -323,6 +324,9 @@ func (p *Parser) lookupSpell(id chrondbc.SpellID) *chrondbc.Spell {
 	}
 	s, err := p.wowDB.Spell(id)
 	if err != nil {
+		if chrondbc.IsSpellNotFound(err) {
+			return ptr.Ref(chrondbc.UnknownSpell(id))
+		}
 		return nil
 	}
 	return s

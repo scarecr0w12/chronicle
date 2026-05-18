@@ -23,8 +23,7 @@ func SpeedrunRulesByInstance() map[string][]rankings.SpeedrunRequirement {
 // MoltenCoreSpeedrunRequirements returns the 10 boss kills required for a
 // valid Molten Core speedrun.
 func MoltenCoreSpeedrunRequirements() []rankings.SpeedrunRequirement {
-	return []rankings.SpeedrunRequirement{
-		{Name: "Incindis", EntryIDs: []uint32{52145}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
+	mc := []rankings.SpeedrunRequirement{
 		{Name: "Lucifron", EntryIDs: []uint32{12118}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
 		{Name: "Magmadar", EntryIDs: []uint32{11982}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
 		{Name: "Garr", EntryIDs: []uint32{12057}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
@@ -32,21 +31,35 @@ func MoltenCoreSpeedrunRequirements() []rankings.SpeedrunRequirement {
 		{Name: "Baron Geddon", EntryIDs: []uint32{12056}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
 		{Name: "Sulfuron Harbinger", EntryIDs: []uint32{12098}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
 		{Name: "Golemagg the Incinerator", EntryIDs: []uint32{11988}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
-		{Name: "Basalthar", EntryIDs: []uint32{65020}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
-		{Name: "Smoldaris", EntryIDs: []uint32{65021}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
-		{Name: "Sorcerer-Thane Thaurissan", EntryIDs: []uint32{57642}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
 		{Name: "Majordomo Executus", EntryIDs: []uint32{12018}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
 		{Name: "Ragnaros", EntryIDs: []uint32{11502}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
 
 		// Trash Requirements
 		{Name: "Firesworn", EntryIDs: []uint32{12099}, Count: 8, Category: rankings.SpeedrunCategoryTrash},
 	}
+
+	switch services.ServerName {
+	case services.ServerIdentityTurtle, services.ServerIdentityOctoWoW:
+		mc = append(mc, []rankings.SpeedrunRequirement{
+			{Name: "Incindis", EntryIDs: []uint32{52145}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
+			{Name: "Basalthar", EntryIDs: []uint32{65020}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
+			{Name: "Smoldaris", EntryIDs: []uint32{65021}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
+			{Name: "Sorcerer-Thane Thaurissan", EntryIDs: []uint32{57642}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
+		}...)
+
+	default:
+		mc = append(mc, []rankings.SpeedrunRequirement{
+			{Name: "Gehennas", EntryIDs: []uint32{12259}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
+		}...)
+	}
+
+	return mc
 }
 
 // BlackwingLairSpeedrunRequirements returns the boss kills required for a
 // valid Blackwing Lair speedrun.
 func BlackwingLairSpeedrunRequirements() []rankings.SpeedrunRequirement {
-	return []rankings.SpeedrunRequirement{
+	bwl := []rankings.SpeedrunRequirement{
 		{Name: "Razorgore the Untamed", EntryIDs: []uint32{12435}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
 		{Name: "Vaelastrasz the Corrupt", EntryIDs: []uint32{13020}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
 		{Name: "Broodlord Lashlayer", EntryIDs: []uint32{12017}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
@@ -57,13 +70,20 @@ func BlackwingLairSpeedrunRequirements() []rankings.SpeedrunRequirement {
 		{Name: "Chromaggus", EntryIDs: []uint32{14020}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
 		{Name: "Nefarian", EntryIDs: []uint32{11583}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
 	}
+	switch services.ServerName {
+	case services.ServerIdentityTurtle, services.ServerIdentityOctoWoW:
+		bwl = append(bwl, []rankings.SpeedrunRequirement{
+			{Name: "Flameweaver Koegler", EntryIDs: []uint32{49017}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
+		}...)
+	}
+	return bwl
 }
 
 // OnyxiasLairSpeedrunRequirements returns the boss kills required for a
 // valid Onyxia's Lair speedrun.
 func OnyxiasLairSpeedrunRequirements() []rankings.SpeedrunRequirement {
 	switch services.ServerName {
-	case services.ServerIdentityTurtle:
+	case services.ServerIdentityTurtle, services.ServerIdentityOctoWoW:
 		return []rankings.SpeedrunRequirement{
 			{Name: "Onyxia", EntryIDs: []uint32{10184}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
 			{Name: "Broodcommander Axelus", EntryIDs: []uint32{49018}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
@@ -79,7 +99,9 @@ func OnyxiasLairSpeedrunRequirements() []rankings.SpeedrunRequirement {
 			{Name: "45132", EntryIDs: []uint32{45132}, Count: 1, Category: rankings.SpeedrunCategoryTrash},
 		}
 	default:
-		return nil
+		return []rankings.SpeedrunRequirement{
+			{Name: "Onyxia", EntryIDs: []uint32{10184, 45133}, Count: 1, Category: rankings.SpeedrunCategoryBosses},
+		}
 	}
 }
 

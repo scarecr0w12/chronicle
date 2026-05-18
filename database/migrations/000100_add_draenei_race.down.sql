@@ -1,0 +1,2 @@
+-- PostgreSQL does not support removing enum values.
+-- Draenei will remain in the enum but won't be used if not needed.

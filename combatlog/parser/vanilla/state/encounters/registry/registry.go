@@ -59,7 +59,7 @@ func FromCommonFactory(f *instances.CommonFactory) Entry {
 // the static registry; the DB wrapping is done by the caller.
 func DefaultRegistry(logger *slog.Logger) *Registry {
 	switch services.ServerName {
-	case services.ServerIdentityTurtle:
+	case services.ServerIdentityTurtle, services.ServerIdentityOctoWoW:
 		return TurtleRegistry(logger)
 	case services.ServerIdentityWarmane:
 		return WarmaneStaticRegistry(logger)

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient, keepPreviousData, type UseQueryOptions } from "@tanstack/react-query";
 import type { WoWSpell } from "./wowdb";
-import type { WoWServer, WoWServerRealm, UploadKey, CreateWoWServerRequest, CreateWoWServerRealmRequest, CreateUploadKeyRequest, RetentionPolicy, RetentionPreviewResponse, RetentionPreviewRequest, SupportedInstance } from "./typesGenerated";
+import type { WoWServer, WoWServerRealm, UploadKey, CreateWoWServerRequest, CreateWoWServerRealmRequest, CreateUploadKeyRequest, RetentionPolicy, RetentionPreviewResponse, RetentionPreviewRequest, SupportedInstance, CensusEntry } from "./typesGenerated";
 import type { 
   WoWLogGroup as WoWLogGroupGenerated, 
   WoWLogFile as WoWLogFileGenerated,
@@ -34,6 +34,7 @@ import type {
   CreateShareResponse as CreateShareResponseGenerated,
   SharedViewResponse as SharedViewResponseGenerated,
   ArmorySearchResponse as ArmorySearchResponseGenerated,
+  ListGuildsResponse as ListGuildsResponseGenerated,
   GuildPageConfig as GuildPageConfigGenerated,
   GuildPageTheme as GuildPageThemeGenerated,
   GuildPageTab as GuildPageTabGenerated,
@@ -56,6 +57,7 @@ import type {
   AdminBulkReparseResponse as AdminBulkReparseResponseGenerated,
   AdminOutdatedInstancesResponse,
   SiteConfig,
+  UpdateSiteConfigRequest,
 } from "./typesGenerated";
 
 // Re-export types for convenience
@@ -92,6 +94,7 @@ export type CreateShareRequest = CreateShareRequestGenerated;
 export type CreateShareResponse = CreateShareResponseGenerated;
 export type SharedViewResponse = SharedViewResponseGenerated;
 export type ArmorySearchResponse = ArmorySearchResponseGenerated;
+export type ListGuildsResponse = ListGuildsResponseGenerated;
 export type GuildPageConfig = GuildPageConfigGenerated;
 export type GuildPageTab = GuildPageTabGenerated;
 export type GuildPagePanel = GuildPagePanelGenerated;
@@ -906,7 +909,7 @@ export function useSiteConfig() {
 export function useUpdateSiteConfig() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (config: SiteConfig) => {
+    mutationFn: async (config: UpdateSiteConfigRequest) => {
       const response = await fetch("/api/v1/admin/site-config", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -1116,6 +1119,24 @@ export function useArmorySearch(
     enabled: params.q.length >= 2,
     staleTime: 30_000,
     ...options,
+  });
+}
+
+export function useGuildSearch(params: { search: string; offset?: number }) {
+  return useQuery({
+    queryKey: ["guild-search", params],
+    queryFn: async () => {
+      const searchParams = new URLSearchParams();
+      if (params.search) searchParams.set("search", params.search);
+      if (params.offset) searchParams.set("offset", String(params.offset));
+      const response = await fetch(`/api/v1/guilds/?${searchParams}`);
+      if (!response.ok) {
+        throw buildAPIError("Guild search failed", await response.json());
+      }
+      return response.json() as Promise<ListGuildsResponse>;
+    },
+    staleTime: 30_000,
+    placeholderData: keepPreviousData,
   });
 }
 
@@ -1855,3 +1876,40 @@ export function useRetentionRun() {
     },
   });
 }
+
+export function useRealms() {
+  return useQuery({
+    queryKey: ["realms"],
+    queryFn: async () => {
+      const response = await fetch("/api/v1/realms");
+      if (!response.ok)
+        throw buildAPIError(
+          "Failed to fetch realms",
+          await response.json()
+        );
+      return response.json() as Promise<WoWServerRealm[]>;
+    },
+  });
+}
+
+export function useCensus(options?: { days?: number; realmIds?: string[] }) {
+  const params = new URLSearchParams();
+  if (options?.days) params.set("days", String(options.days));
+  options?.realmIds?.forEach((id) => params.append("realm_id", id));
+
+  return useQuery({
+    queryKey: ["census", options?.days ?? 90, options?.realmIds ?? []],
+    placeholderData: keepPreviousData,
+    queryFn: async () => {
+      const response = await fetch(`/api/v1/census?${params}`);
+      if (!response.ok)
+        throw buildAPIError(
+          "Failed to fetch census data",
+          await response.json()
+        );
+      return response.json() as Promise<CensusEntry[]>;
+    },
+  });
+}
+
+

@@ -95,12 +95,14 @@ func NewHookable(ctx context.Context, logger *slog.Logger, db *unitdb.Units, z z
 	combatantStrategy := EmitAllActive
 	cres := classiccreatures.TurtleCharacterFactories()
 	logType, ok := parsectx.Type(ctx)
-	if ok {
-		switch logType {
-		case database.LogTypeAzerothcore:
-			cres = wotlkcreatures.AzerothCoreCharacterFactories()
-			combatantStrategy = EmitAllPlayers
-		}
+	if !ok {
+		logType = database.LogTypeV2
+	}
+
+	switch logType {
+	case database.LogTypeAzerothcore:
+		cres = wotlkcreatures.AzerothCoreCharacterFactories()
+		combatantStrategy = EmitAllPlayers
 	}
 
 	chrs := characters.NewCharacters(db, cres)
@@ -145,7 +147,8 @@ func NewHookable(ctx context.Context, logger *slog.Logger, db *unitdb.Units, z z
 
 	switch services.ServerName {
 	// 1.12 does not record overheals in the logs
-	case services.ServerIdentityTurtle, services.ServerIdentityKronos:
+	case services.ServerIdentityTurtle, services.ServerIdentityKronos,
+		services.ServerIdentityVanillaPlus, services.ServerIdentityOctoWoW:
 		hooks = append(hooks, &Overhealing{
 			deficits: make(map[guid.GUID]int32),
 		})

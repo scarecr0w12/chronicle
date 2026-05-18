@@ -54,7 +54,9 @@ type Options struct {
 	// ShortLinkDomain is the domain used for short share links (e.g. "chrn.link").
 	// If empty, short links use same-origin paths instead.
 	ShortLinkDomain string
-	DevOAuth        bool
+	// ClientUploadsDisabled disables client-side log uploads (for servers using server-side logging).
+	ClientUploadsDisabled bool
+	DevOAuth              bool
 	Discord         chronauth.DiscordOAuth
 	SecretPEM       []byte // Used for JWTs
 }
@@ -266,6 +268,12 @@ func (api *API) Routes() chi.Router {
 		// Public armory routes
 		r.Get("/armory/search", api.SearchArmoryPlayers)
 		r.Get("/armory/{realm}/{player}", api.GetArmoryPlayer)
+
+		// Public realm listing
+		r.Get("/realms", api.ListPublicRealms)
+
+		// Public census data
+		r.Get("/census", api.Census)
 
 		r.Group(func(r chi.Router) {
 			r.Route("/raidlogs", func(r chi.Router) {

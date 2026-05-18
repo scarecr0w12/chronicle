@@ -7,11 +7,13 @@ import (
 )
 
 type GuildInfo struct {
-	ID        uuid.UUID `json:"id"`
-	Name      string    `json:"name"`
-	RealmID   uuid.UUID `json:"realm_id"`
-	RealmName string    `json:"realm_name"`
-	HasPage   bool      `json:"has_page"`
+	ID          uuid.UUID `json:"id"`
+	Name        string    `json:"name"`
+	RealmID     uuid.UUID `json:"realm_id"`
+	RealmName   string    `json:"realm_name"`
+	HasPage     bool      `json:"has_page"`
+	PlayerCount int64     `json:"player_count"`
+	LogoURL     string    `json:"logo_url"`
 	CanEdit       bool `json:"can_edit"`
 	CanViewRoster bool `json:"can_view_roster"`
 }

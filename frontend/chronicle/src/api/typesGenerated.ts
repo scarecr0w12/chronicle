@@ -205,6 +205,16 @@ export interface AzerothCorePingResponse {
     readonly status: string;
 }
 
+// From chroniclesdk/census.go
+/**
+ * CensusEntry represents a count of unique players for a given class/race pair.
+ */
+export interface CensusEntry {
+    readonly class: string;
+    readonly race: string;
+    readonly count: number;
+}
+
 // From chroniclesdk/events.go
 export interface ChronicleEncounterEvents {
     readonly encounter_id: string;
@@ -339,6 +349,8 @@ export interface GuildInfo {
     readonly realm_id: string;
     readonly realm_name: string;
     readonly has_page: boolean;
+    readonly player_count: number;
+    readonly logo_url: string;
     readonly can_edit: boolean;
     readonly can_view_roster: boolean;
 }
@@ -1147,6 +1159,11 @@ export interface SimItemSpell {
 export interface SiteConfig {
     readonly signups_enabled: boolean;
     readonly short_link_domain?: string;
+    /**
+     * ClientUploadsDisabled indicates that this server uses server-side logging
+     * and client-side uploads should be hidden from the UI.
+     */
+    readonly client_uploads_disabled: boolean;
 }
 
 // From chroniclesdk/constants.go
@@ -1328,6 +1345,15 @@ export interface UpdatePreferencesRequest {
 // From chroniclesdk/regression.go
 export interface UpdateRegressionFixtureNoteRequest {
     readonly note: string;
+}
+
+// From chroniclesdk/user.go
+/**
+ * UpdateSiteConfigRequest allows partial updates to site configuration.
+ * Only non-nil fields will be updated.
+ */
+export interface UpdateSiteConfigRequest {
+    readonly signups_enabled?: boolean;
 }
 
 // From chroniclesdk/guild_page.go
@@ -1582,9 +1608,9 @@ export type WoWHeroGender = 3 | 2 | 0 | 1;
 export const WoWHeroGenders: WoWHeroGender[] = [3, 2, 0, 1];
 
 // From types/constants.go
-export type WoWHeroRaces = "BloodElf" | "Dwarf" | "Gnome" | "Goblin" | "Human" | "NightElf" | "Orc" | "Scourge" | "Tauren" | "Troll" | "Unknown";
+export type WoWHeroRaces = "BloodElf" | "Draenei" | "Dwarf" | "Gnome" | "Goblin" | "Human" | "NightElf" | "Orc" | "Scourge" | "Tauren" | "Troll" | "Unknown";
 
-export const WoWHeroRaceses: WoWHeroRaces[] = ["BloodElf", "Dwarf", "Gnome", "Goblin", "Human", "NightElf", "Orc", "Scourge", "Tauren", "Troll", "Unknown"];
+export const WoWHeroRaceses: WoWHeroRaces[] = ["BloodElf", "Draenei", "Dwarf", "Gnome", "Goblin", "Human", "NightElf", "Orc", "Scourge", "Tauren", "Troll", "Unknown"];
 
 // From types/constants.go
 export type WoWHitType = 4 | 512 | 32768 | 2048 | 16384 | 1024 | 128 | 262144 | 16 | 256 | 2 | 8192 | 65536 | 32 | 0 | 1 | 4096 | 64 | 131072 | 8 | 2097152 | 1048576 | 524288;

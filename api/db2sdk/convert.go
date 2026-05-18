@@ -14,6 +14,28 @@ import (
 	"github.com/google/uuid"
 	"github.com/riverqueue/river/rivertype"
 )
+func nullUUIDPtr(n uuid.NullUUID) *uuid.UUID {
+	if !n.Valid {
+		return nil
+	}
+	return &n.UUID
+}
+
+func WoWServerRealm(r database.WowServerRealm) chroniclesdk.WoWServerRealm {
+	var url *string
+	if r.Url.Valid {
+		url = &r.Url.String
+	}
+	return chroniclesdk.WoWServerRealm{
+		ID:          r.ID,
+		ServerID:    r.ServerID,
+		Name:        r.Name,
+		Description: r.Description,
+		URL:         url,
+		CreatedBy:   nullUUIDPtr(r.CreatedBy),
+	}
+}
+
 
 func User(user database.ChronicleUser, roles []string) chroniclesdk.User {
 	var dataLimitUpdated time.Time

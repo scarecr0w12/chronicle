@@ -237,7 +237,7 @@ func (p *Parser) aura(ctx context.Context, event string, ts time.Time, buff bool
 
 func (p *Parser) zoneInfo(ctx context.Context, ts time.Time, m *Matched) ([]messages.Message, error) {
 	name := m.String()
-	instanceID := uint32(m.Uint64())
+	instanceID := m.OptionalUint32()
 	inInstance := m.Int64() == 1
 	instanceType := m.String() // none, party, raid, pvp
 	isGhost := m.Int64() == 1
@@ -480,7 +480,11 @@ func (p *Parser) swing(ctx context.Context, ts time.Time, m *Matched) ([]message
 
 	auto, err := p.wowDB.Spell(chrondbc.SpellIDAutoAttack)
 	if err != nil {
-		return nil, fmt.Errorf("fetching auto attack spell: %w", err)
+		if chrondbc.IsSpellNotFound(err) {
+			auto = ptr.Ref(chrondbc.UnknownSpell(chrondbc.SpellIDAutoAttack))
+		} else {
+			return nil, fmt.Errorf("fetching auto attack spell: %w", err)
+		}
 	}
 	ht := HitType(amount, components, info, victimState)
 
@@ -607,7 +611,11 @@ func (p *Parser) dmgShield(ctx context.Context, ts time.Time, m *Matched) ([]mes
 
 	spell, err := p.wowDB.Spell(spellID)
 	if err != nil {
-		return nil, fmt.Errorf("fetching environment spell: %w", err)
+		if chrondbc.IsSpellNotFound(err) {
+			spell = ptr.Ref(chrondbc.UnknownSpell(spellID))
+		} else {
+			return nil, fmt.Errorf("fetching environment spell: %w", err)
+		}
 	}
 
 	return set(&messages.Damage{
@@ -686,7 +694,11 @@ func (p *Parser) envDmg(ctx context.Context, ts time.Time, m *Matched) ([]messag
 
 	spell, err := p.wowDB.Spell(spellID)
 	if err != nil {
-		return nil, fmt.Errorf("fetching environment spell: %w", err)
+		if chrondbc.IsSpellNotFound(err) {
+			spell = ptr.Ref(chrondbc.UnknownSpell(spellID))
+		} else {
+			return nil, fmt.Errorf("fetching environment spell: %w", err)
+		}
 	}
 
 	return set(&messages.Damage{

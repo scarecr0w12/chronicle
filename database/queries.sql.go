@@ -12,6 +12,49 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const censusPlayerCounts = `-- name: CensusPlayerCounts :many
+SELECT
+  class,
+  race,
+  COUNT(*) AS count
+FROM game_players
+WHERE updated_at >= $1::timestamptz
+  AND (cardinality($2::uuid[]) = 0 OR realm_id = ANY($2::uuid[]))
+GROUP BY class, race
+ORDER BY class, race
+`
+
+type CensusPlayerCountsParams struct {
+	UpdatedAfter pgtype.Timestamptz `db:"updated_after" json:"updated_after"`
+	RealmIds     []uuid.UUID        `db:"realm_ids" json:"realm_ids"`
+}
+
+type CensusPlayerCountsRow struct {
+	Class WowPlayableClass `db:"class" json:"class"`
+	Race  WowPlayableRace  `db:"race" json:"race"`
+	Count int64            `db:"count" json:"count"`
+}
+
+func (q *sqlQuerier) CensusPlayerCounts(ctx context.Context, arg CensusPlayerCountsParams) ([]CensusPlayerCountsRow, error) {
+	rows, err := q.db.Query(ctx, censusPlayerCounts, arg.UpdatedAfter, arg.RealmIds)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []CensusPlayerCountsRow
+	for rows.Next() {
+		var i CensusPlayerCountsRow
+		if err := rows.Scan(&i.Class, &i.Race, &i.Count); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getGamePlayerByGUID = `-- name: GetGamePlayerByGUID :one
 SELECT
   gp.id, gp.realm_id, gp.created_at, gp.guild_id, gp.name, gp.class, gp.gender, gp.race, gp.gear, gp.updated_at, gp.updated_from_instance, gp.level, gp.talents,
@@ -484,6 +527,37 @@ func (q *sqlQuerier) InsertWoWServerRealm(ctx context.Context, arg InsertWoWServ
 		&i.Description,
 	)
 	return i, err
+}
+
+const listAllWoWServerRealms = `-- name: ListAllWoWServerRealms :many
+SELECT id, server_id, name, created_by, url, description FROM wow_server_realms ORDER BY name
+`
+
+func (q *sqlQuerier) ListAllWoWServerRealms(ctx context.Context) ([]WowServerRealm, error) {
+	rows, err := q.db.Query(ctx, listAllWoWServerRealms)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []WowServerRealm
+	for rows.Next() {
+		var i WowServerRealm
+		if err := rows.Scan(
+			&i.ID,
+			&i.ServerID,
+			&i.Name,
+			&i.CreatedBy,
+			&i.Url,
+			&i.Description,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listUploadKeysByRealm = `-- name: ListUploadKeysByRealm :many
@@ -1665,6 +1739,18 @@ func (q *sqlQuerier) BulkUpsertGuildPagePanels(ctx context.Context, dollar_1 []b
 	return err
 }
 
+const countGuilds = `-- name: CountGuilds :one
+SELECT COUNT(*) FROM guilds g
+WHERE ($1::text = '' OR g.name ILIKE '%' || $1 || '%')
+`
+
+func (q *sqlQuerier) CountGuilds(ctx context.Context, dollar_1 string) (int64, error) {
+	row := q.db.QueryRow(ctx, countGuilds, dollar_1)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const deleteGuildPage = `-- name: DeleteGuildPage :exec
 DELETE FROM guild_pages WHERE guild_id = $1
 `
@@ -1992,12 +2078,16 @@ const listGuildsWithPages = `-- name: ListGuildsWithPages :many
 SELECT 
     g.id, g.realm_id, g.name, g.created_at,
     gp.id as page_id,
-    r.name as realm_name
+    r.name as realm_name,
+    COUNT(gpl.id) AS player_count,
+    COALESCE(gp.theme->>'logo_url', '')::text AS logo_url
 FROM guilds g
 LEFT JOIN guild_pages gp ON gp.guild_id = g.id
 JOIN wow_server_realms r ON r.id = g.realm_id
+LEFT JOIN game_players gpl ON gpl.guild_id = g.id
 WHERE ($1::text = '' OR g.name ILIKE '%' || $1 || '%')
-ORDER BY g.name
+GROUP BY g.id, gp.id, r.name, gp.theme
+ORDER BY COUNT(gpl.id) DESC, g.name
 LIMIT $2 OFFSET $3
 `
 
@@ -2008,12 +2098,14 @@ type ListGuildsWithPagesParams struct {
 }
 
 type ListGuildsWithPagesRow struct {
-	ID        uuid.UUID          `db:"id" json:"id"`
-	RealmID   uuid.UUID          `db:"realm_id" json:"realm_id"`
-	Name      string             `db:"name" json:"name"`
-	CreatedAt pgtype.Timestamptz `db:"created_at" json:"created_at"`
-	PageID    uuid.NullUUID      `db:"page_id" json:"page_id"`
-	RealmName string             `db:"realm_name" json:"realm_name"`
+	ID          uuid.UUID          `db:"id" json:"id"`
+	RealmID     uuid.UUID          `db:"realm_id" json:"realm_id"`
+	Name        string             `db:"name" json:"name"`
+	CreatedAt   pgtype.Timestamptz `db:"created_at" json:"created_at"`
+	PageID      uuid.NullUUID      `db:"page_id" json:"page_id"`
+	RealmName   string             `db:"realm_name" json:"realm_name"`
+	PlayerCount int64              `db:"player_count" json:"player_count"`
+	LogoUrl     string             `db:"logo_url" json:"logo_url"`
 }
 
 func (q *sqlQuerier) ListGuildsWithPages(ctx context.Context, arg ListGuildsWithPagesParams) ([]ListGuildsWithPagesRow, error) {
@@ -2032,6 +2124,8 @@ func (q *sqlQuerier) ListGuildsWithPages(ctx context.Context, arg ListGuildsWith
 			&i.CreatedAt,
 			&i.PageID,
 			&i.RealmName,
+			&i.PlayerCount,
+			&i.LogoUrl,
 		); err != nil {
 			return nil, err
 		}

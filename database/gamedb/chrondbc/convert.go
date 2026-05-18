@@ -1,6 +1,7 @@
 package chrondbc
 
 import (
+	"strings"
 	"time"
 
 	"github.com/Emyrk/chronicle/database/gamedb/dbcdb"
@@ -51,6 +52,9 @@ func (s SpellsDBC) Index(i int) (*Spell, error) {
 func (s SpellsDBC) ID(id int) (*Spell, error) {
 	dbSp, err := s.under.ID(id)
 	if err != nil {
+		if strings.Contains(err.Error(), "record not found") {
+			return nil, SpellNotFound(id)
+		}
 		return nil, err
 	}
 	sp := SpellFromDB(dbSp)

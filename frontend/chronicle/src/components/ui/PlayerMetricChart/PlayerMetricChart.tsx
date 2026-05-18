@@ -70,6 +70,8 @@ interface PlayerMetricChartProps extends React.ComponentProps<"div"> {
   disableInteractions?: boolean
   /** Called when a row is Ctrl+clicked (or Cmd+clicked on Mac). Parent can use this to show a context menu. */
   onRowCtrlClick?: (playerId: string, event: React.MouseEvent) => void
+  /** Custom suffix appended to each row's value (e.g. '%'). Overrides the default '/s' from perSecond. */
+  valueSuffix?: string
 }
 
 export function PlayerMetricChart({
@@ -85,6 +87,7 @@ export function PlayerMetricChart({
   stackedLabel = 'Overheal',
   disableInteractions = false,
   onRowCtrlClick,
+  valueSuffix,
   // Exclude dir from divProps to avoid type conflict with ScrollArea
   dir: _dir,
   ...divProps
@@ -162,7 +165,7 @@ export function PlayerMetricChart({
             summedValue={summedValue}
             showRank={type === 'damage' || type === 'healing' || type === 'taken' || type === 'mitigation'}
             type={type}
-            suffix={perSecond ? '/s' : ''}
+            suffix={valueSuffix ?? (perSecond ? '/s' : '')}
             decimals={perSecond ? 1 : 0}
             isPinned={pinnedPlayerIds.has(player.playerID)}
             onTogglePin={() => handleTogglePin(player.playerID)}

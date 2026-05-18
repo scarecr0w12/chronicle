@@ -454,6 +454,8 @@ const (
 	HeroRacesNightElf HeroRaces = "NightElf"
 	// HeroRacesBloodElf is a HeroRaces of type BloodElf.
 	HeroRacesBloodElf HeroRaces = "BloodElf"
+	// HeroRacesDraenei is a HeroRaces of type Draenei.
+	HeroRacesDraenei HeroRaces = "Draenei"
 	// HeroRacesUnknown is a HeroRaces of type Unknown.
 	HeroRacesUnknown HeroRaces = "Unknown"
 )
@@ -493,6 +495,8 @@ var _HeroRacesValue = map[string]HeroRaces{
 	"nightelf": HeroRacesNightElf,
 	"BloodElf": HeroRacesBloodElf,
 	"bloodelf": HeroRacesBloodElf,
+	"Draenei":  HeroRacesDraenei,
+	"draenei":  HeroRacesDraenei,
 	"Unknown":  HeroRacesUnknown,
 	"unknown":  HeroRacesUnknown,
 }

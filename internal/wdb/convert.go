@@ -65,7 +65,7 @@ func ItemToWorldTemplate(it Item) database.WorldItemTemplate {
 		DmgMin2:                   float64(it.DmgMin[1]),
 		DmgMax2:                   float64(it.DmgMax[1]),
 		DmgType2:                  int32(it.DmgType[1]),
-		// DmgMin3-5 stay zero — WDB only has 2 damage slots.
+		// DmgMin3-5 stay zero — vanilla WDB has 5 slots but DB only stores 2.
 		Block:                  int32(it.Block),
 		Armor:                  int32(it.Armor),
 		HolyRes:                int32(it.HolyRes),

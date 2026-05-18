@@ -1,6 +1,7 @@
 package chrondbc
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -16,6 +17,17 @@ const (
 type SpellRef struct {
 	ID   int32  `json:"id"`
 	Name string `json:"name"`
+}
+
+func UnknownSpell(id SpellID) Spell {
+	return Spell{
+		ID:               id,
+		Name_lang:        i18n.Text{i18n.English: fmt.Sprintf("Unknown Spell (%d)", id)},
+		Description_lang: i18n.Text{i18n.English: "Spell is missing from Spells.dbc. Report this as a bug."},
+		SpellIconID:      1, // INV_Misc_QuestionMark
+		BaseLevel:        1,
+		SpellLevel:       1,
+	}
 }
 
 type Spell struct {
@@ -233,10 +245,16 @@ func (s Spell) SpellDamageType() SpellDamageType {
 	case 22439: // Mark of Destruction
 		// Ads in Ony cast this, the mark can trigger post death
 		return SpellDamageNoEngageCombat
+	case 25228: // Soul Link
+		// Soul link can trigger from any source, including "No Engage Combat" spells.
+		// So it's safest to just ignore this.
+		return SpellDamageNoEngageCombat
 	}
 
 	for i, eff := range s.Effect {
 		switch eff {
+		case EffectDummy:
+			base |= SpellDamageNoEngageCombat
 		case EffectEnvironmentalDMG:
 			base |= SpellDamageNoEngageCombat
 		case EffectOpenLock:
@@ -273,6 +291,9 @@ func (s Spell) SpellDamageType() SpellDamageType {
 					base |= SpellDamageActiveDebuff
 				}
 			}
+		case EffectApplyAreaAuraEnemy:
+			// Example: https://vanillaplus.chronicleclassic.com/wowdb/spell/34487
+			base |= SpellDamageNoEngageCombat
 		default:
 		}
 	}

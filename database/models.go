@@ -556,6 +556,7 @@ const (
 	WowPlayableRaceNightElf WowPlayableRace = "NightElf"
 	WowPlayableRaceBloodElf WowPlayableRace = "BloodElf"
 	WowPlayableRaceUnknown  WowPlayableRace = "Unknown"
+	WowPlayableRaceDraenei  WowPlayableRace = "Draenei"
 )
 
 func (e *WowPlayableRace) Scan(src interface{}) error {
@@ -605,7 +606,8 @@ func (e WowPlayableRace) Valid() bool {
 		WowPlayableRaceDwarf,
 		WowPlayableRaceNightElf,
 		WowPlayableRaceBloodElf,
-		WowPlayableRaceUnknown:
+		WowPlayableRaceUnknown,
+		WowPlayableRaceDraenei:
 		return true
 	}
 	return false
@@ -624,6 +626,7 @@ func AllWowPlayableRaceValues() []WowPlayableRace {
 		WowPlayableRaceNightElf,
 		WowPlayableRaceBloodElf,
 		WowPlayableRaceUnknown,
+		WowPlayableRaceDraenei,
 	}
 }
 

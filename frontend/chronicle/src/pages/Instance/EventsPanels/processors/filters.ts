@@ -304,12 +304,13 @@ const FILTER_COMPILERS: Record<PanelFilterType, FilterCompiler> = {
       const single = names[0];
       return (event) => {
         const name = (getEventAbilityName(event) ?? "").toLowerCase();
-        return name.includes(single);
+        return name === single;
       };
     }
+    const nameSet = new Set(names);
     return (event) => {
       const name = (getEventAbilityName(event) ?? "").toLowerCase();
-      return names.some((n) => name.includes(n));
+      return nameSet.has(name);
     };
   },
 

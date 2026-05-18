@@ -151,7 +151,17 @@ func (api *API) DeleteWoWLogFiles(w http.ResponseWriter, r *http.Request) {
 
 func (api *API) WoWLogUpload(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
-	//uc := chronauth.MustAuthenticatedClaims(ctx)
+
+	if api.Opts.ClientUploadsDisabled {
+		actor, _ := authz.ActorFromContext(ctx)
+		isAdmin, err := api.Zed.CheckOne(ctx, nil, policy.New().GlobalChronicle().CanAdmin_logs_User(actor))
+		if err != nil || !isAdmin {
+			httpapi.Write(ctx, w, http.StatusForbidden, chroniclesdk.Response{
+				Message: "Client-side uploads are disabled on this server.",
+			})
+			return
+		}
+	}
 
 	first, firstHeader, err := r.FormFile("combat_log_1")
 	if err != nil {
@@ -231,6 +241,17 @@ func isGzipped(header *multipart.FileHeader) bool {
 // WoWLogUploadV2 handles single-file uploads for parserv2 logs.
 func (api *API) WoWLogUploadV2(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
+
+	if api.Opts.ClientUploadsDisabled {
+		actor, _ := authz.ActorFromContext(ctx)
+		isAdmin, err := api.Zed.CheckOne(ctx, nil, policy.New().GlobalChronicle().CanAdmin_logs_User(actor))
+		if err != nil || !isAdmin {
+			httpapi.Write(ctx, w, http.StatusForbidden, chroniclesdk.Response{
+				Message: "Client-side uploads are disabled on this server.",
+			})
+			return
+		}
+	}
 
 	file, header, err := r.FormFile("combat_log")
 	if err != nil {

@@ -1,0 +1,66 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens lifted from the main Chronicle frontend.
+ * We duplicate the small subset we need rather than sharing code across apps.
+ */
+
+:root {
+  --background: oklch(0.2891 0 0);
+  --foreground: oklch(0.9300 0.0035 247.8602);
+  --card: oklch(0.2686 0 0);
+  --card-foreground: oklch(0.9300 0.0035 247.8602);
+  --primary: #5F8FA6;
+  --primary-darker: oklch(0.3818 0.0603 233.7748);
+  --primary-foreground: oklch(0.8914 0 0);
+  --secondary: oklch(0.5692 0.0609 82.3871);
+  --secondary-foreground: oklch(0.9300 0.0035 247.8602);
+  --muted: oklch(0.2686 0 0);
+  --muted-foreground: oklch(0.7593 0.0073 67.7161);
+  --accent: oklch(0.5692 0.0609 82.3871);
+  --accent-foreground: oklch(0.9300 0.0035 247.8602);
+  --border: oklch(0.3407 0 0);
+  --input: oklch(0.3407 0 0);
+  --ring: oklch(0.5204 0.0833 232.6334);
+  --destructive: oklch(0.6368 0.2078 25.3313);
+  --tertiary: #5F8FA6;
+  --radius: 0.5rem;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-primary: var(--primary);
+  --color-primary-darker: var(--primary-darker);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+
+  --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+}
+
+html {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+body {
+  margin: 0;
+  min-height: 100dvh;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}

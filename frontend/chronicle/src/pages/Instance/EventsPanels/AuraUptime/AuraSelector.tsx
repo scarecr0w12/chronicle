@@ -5,7 +5,6 @@
 import { useState, useRef, useEffect, useMemo } from "react";
 import { ChevronDown, Search, X, Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { ScrollArea } from "@/components/ui/ScrollArea/ScrollArea";
 
 interface AuraSelectorProps {
   auras: string[];
@@ -196,7 +195,7 @@ export function AuraSelector({ auras, selected, onChange, className }: AuraSelec
           </div>
 
           {/* Results */}
-          <ScrollArea className="h-[300px]">
+          <div className="max-h-[300px] overflow-auto styled-scrollbar">
             <div className="p-1">
               {filteredAuras.length > 0 ? (
                 filteredAuras.map((aura) => {
@@ -228,7 +227,7 @@ export function AuraSelector({ auras, selected, onChange, className }: AuraSelec
                 </div>
               )}
             </div>
-          </ScrollArea>
+          </div>
           
           {/* Count */}
           <div className="px-2 py-1 border-t text-xs text-muted-foreground">

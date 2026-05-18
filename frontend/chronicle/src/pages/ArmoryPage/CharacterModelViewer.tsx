@@ -17,6 +17,7 @@ function mapRace(race: string): string {
     Gnome: "gnome",
     Troll: "troll",
     BloodElf: "bloodelf",
+    Draenei: "draenei",
     HighElf: "highelf",
   };
   return map[race] ?? race.toLowerCase();

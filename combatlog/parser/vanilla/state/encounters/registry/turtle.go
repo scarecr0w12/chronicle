@@ -28,7 +28,7 @@ func TurtleRegistry(logger *slog.Logger) *Registry {
 	r.RegisterEntry(FromCommonFactory(instances.SunkenTempleFactory).WithComment("not yet complete"))
 	r.RegisterEntry(FromCommonFactory(instances.FrostmaneHollowFactory).WithComment("units registered"))
 
-	r.RegisterEntry(FromCommonFactory(instances.BlackrockSpireFactory).WithComment("Only upper spire is supported at the moment"))
+	r.RegisterEntry(FromCommonFactory(instances.BlackrockSpireFactory).WithComment("units registered"))
 
 	// 10 man
 	r.RegisterEntry(FromCommonFactory(instances.TowerOfKarazhanFactory).WithComment("Upper tower is not completely supported yet"))

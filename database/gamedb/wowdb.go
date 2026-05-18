@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"strings"
 	"sync/atomic"
 
 	"github.com/Emyrk/chronicle/combatlog/parser/types/combatant"
@@ -158,7 +157,7 @@ func (w *WoWDB) Spell(id chrondbc.SpellID) (*chrondbc.Spell, error) {
 	}
 	sp, err := w.spells.ID(int(id))
 	if err != nil {
-		if strings.Contains(err.Error(), "couldn't find record matching ID") {
+		if chrondbc.IsSpellNotFound(err) {
 			w.spellLRU.Add(id, SpellEntry{Spell: sp, Error: err})
 		}
 		return nil, err

@@ -18,7 +18,7 @@ func (h *Handler) handleItemUpload(ctx context.Context, w http.ResponseWriter, m
 	// Parse all records.
 	items := make([]wdb.Item, 0, len(records))
 	for _, rec := range records {
-		item, err := wdb.ParseItem(rec)
+		item, err := wdb.ParseItem(rec, wdbHeader.Version)
 		if err != nil {
 			httpapi.Write(ctx, w, http.StatusBadRequest, chroniclesdk.Response{
 				Message: fmt.Sprintf("Failed to parse item entry %d", rec.EntryID),

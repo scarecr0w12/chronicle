@@ -99,16 +99,24 @@ JOIN guilds g ON g.id = gp.guild_id
 JOIN wow_server_realms r ON r.id = g.realm_id
 WHERE gp.guild_id = $1;
 
+-- name: CountGuilds :one
+SELECT COUNT(*) FROM guilds g
+WHERE ($1::text = '' OR g.name ILIKE '%' || $1 || '%');
+
 -- name: ListGuildsWithPages :many
 SELECT 
     g.*,
     gp.id as page_id,
-    r.name as realm_name
+    r.name as realm_name,
+    COUNT(gpl.id) AS player_count,
+    COALESCE(gp.theme->>'logo_url', '')::text AS logo_url
 FROM guilds g
 LEFT JOIN guild_pages gp ON gp.guild_id = g.id
 JOIN wow_server_realms r ON r.id = g.realm_id
+LEFT JOIN game_players gpl ON gpl.guild_id = g.id
 WHERE ($1::text = '' OR g.name ILIKE '%' || $1 || '%')
-ORDER BY g.name
+GROUP BY g.id, gp.id, r.name, gp.theme
+ORDER BY COUNT(gpl.id) DESC, g.name
 LIMIT $2 OFFSET $3;
 
 -- name: GetGuildByID :one

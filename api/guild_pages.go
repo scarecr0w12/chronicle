@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 
 	"github.com/Emyrk/chronicle/api/chronauth"
@@ -115,8 +116,21 @@ func defaultGuildPageConfig(guild chroniclesdk.GuildInfo) chroniclesdk.GuildPage
 func (api *API) ListGuilds(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 	search := r.URL.Query().Get("search")
-	limit := 50
+
+	const maxLimit = 15
+	limit := maxLimit
 	offset := 0
+	if v := r.URL.Query().Get("offset"); v != "" {
+		if n, err := strconv.Atoi(v); err == nil && n >= 0 {
+			offset = n
+		}
+	}
+
+	total, err := api.Opts.Zed.CountGuilds(ctx, search)
+	if err != nil {
+		httpapi.InternalServerError(w, err)
+		return
+	}
 
 	guilds, err := api.Opts.Zed.ListGuildsWithPages(ctx, database.ListGuildsWithPagesParams{
 		Column1: search, // Empty string handled in SQL with IS NULL check
@@ -145,18 +159,20 @@ func (api *API) ListGuilds(w http.ResponseWriter, r *http.Request) {
 		}
 
 		result = append(result, chroniclesdk.GuildInfo{
-			ID:        g.ID,
-			Name:      g.Name,
-			RealmID:   g.RealmID,
-			RealmName: g.RealmName,
-			HasPage:   g.PageID.Valid,
-			CanEdit:   canEdit,
+			ID:          g.ID,
+			Name:        g.Name,
+			RealmID:     g.RealmID,
+			RealmName:   g.RealmName,
+			HasPage:     g.PageID.Valid,
+			PlayerCount: g.PlayerCount,
+			LogoURL:     g.LogoUrl,
+			CanEdit:     canEdit,
 		})
 	}
 
 	httpapi.Write(ctx, w, http.StatusOK, chroniclesdk.ListGuildsResponse{
 		Guilds: result,
-		Total:  len(result),
+		Total:  int(total),
 	})
 }
 

@@ -21,8 +21,9 @@ func (sa SpellAttributes) Has(a Attribute) bool {
 }
 
 // Set sets the given attribute.
-func (sa *SpellAttributes) Set(a Attribute) {
+func (sa *SpellAttributes) Set(a Attribute) *SpellAttributes {
 	sa[a.Block()] |= a.Mask()
+	return sa
 }
 
 // Clear clears the given attribute.
@@ -83,22 +84,22 @@ const (
 
 // Block 1: AttributesEx
 const (
-	AttrEx_DismissPet                  Attribute = (1 << iota) | (1 << 32) //  0
-	AttrEx_DrainAllPower                                                   //  1 use all power (Only paladin Lay of Hands and Bunyanize)
+	AttrEx_DismissPet    Attribute = (1 << iota) | (1 << 32) //  0
+	AttrEx_DrainAllPower                                     //  1 use all power (Only paladin Lay of Hands and Bunyanize)
 	// AttrEx_Channeled1 is the classical channel
-  AttrEx_Channeled1                                                      //  2 channeled 1
-	AttrEx_CantBeRedirected                                                //  3
-	AttrEx_Unk4                                                            //  4
-	AttrEx_NotBreakStealth                                                 //  5 Not break stealth
+	AttrEx_Channeled1       //  2 channeled 1
+	AttrEx_CantBeRedirected //  3
+	AttrEx_Unk4             //  4
+	AttrEx_NotBreakStealth  //  5 Not break stealth
 	// AttrEx_Channeled2 is used for special interrupt like AoE channel
-  AttrEx_Channeled2                                                      //  6 channeled 2
-	AttrEx_CantBeReflected                                                 //  7
-	AttrEx_NotInCombatTarget                                               //  8 Spell req target not to be in combat state
-	AttrEx_FacingTarget                                                    //  9 TODO: CONFIRM!
-	AttrEx_NoThreat                                                        //  10 no generates threat on cast 100%
-	AttrEx_DontRefreshDurationOnRecast                                     //  11 Aura will not refresh its duration when recast
-	AttrEx_FailureBreaksStealth                                            //  12
-	AttrEx_ToggleFarsight                                                  //  13
+	AttrEx_Channeled2                  //  6 channeled 2
+	AttrEx_CantBeReflected             //  7
+	AttrEx_NotInCombatTarget           //  8 Spell req target not to be in combat state
+	AttrEx_FacingTarget                //  9 TODO: CONFIRM!
+	AttrEx_NoThreat                    //  10 no generates threat on cast 100%
+	AttrEx_DontRefreshDurationOnRecast //  11 Aura will not refresh its duration when recast
+	AttrEx_FailureBreaksStealth        //  12
+	AttrEx_ToggleFarsight              //  13
 	// AttrEx_ChannelTrackTarget follows the target's position during the channel.
 	AttrEx_ChannelTrackTarget       //  14
 	AttrEx_DispelAurasOnImmunity    //  15 remove auras on immunity

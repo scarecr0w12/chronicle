@@ -95,8 +95,9 @@ jobs:
     runs-on: ubuntu-latest
     environment: actions
     strategy:
+      fail-fast: false
       matrix:
-        server: [turtle, epoch, kronos, warmane]
+        server: [turtle, epoch, kronos, warmane, vanillaplus, octowow]
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -139,23 +140,30 @@ jobs:
     runs-on: ubuntu-latest
     environment: railway
     strategy:
+      fail-fast: false
       matrix:
         include:
           - server: turtle
             railway_service: chronicled
             railway_token_secret: RAILWAY_TOKEN
-          - server: epoch
-            railway_service: chronicled
-            railway_token_secret: RAILWAY_TOKEN_EPOCH
+#          - server: epoch
+#            railway_service: chronicled
+#            railway_token_secret: RAILWAY_TOKEN_EPOCH
           - server: kronos
             railway_service: chronicled
             railway_token_secret: RAILWAY_TOKEN_KRONOS
-          - server: warmane
+          - server: vanillaplus
             railway_service: chronicled
-            railway_token_secret: RAILWAY_TOKEN_WARMANE
+            railway_token_secret: RAILWAY_TOKEN_VANILLAPLUS
+#          - server: warmane
+#            railway_service: chronicled
+#            railway_token_secret: RAILWAY_TOKEN_WARMANE
 #          - server: ascension
 #            railway_service: chronicled
 #            railway_token_secret: RAILWAY_TOKEN_ASCENSION
+          - server: octowow
+            railway_service: chronicled
+            railway_token_secret: RAILWAY_TOKEN_OCTOWOW
     steps:
       - name: Install Railway CLI
         run: npm install -g @railway/cli

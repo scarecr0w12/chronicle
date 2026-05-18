@@ -2,19 +2,32 @@ package wdb
 
 import "fmt"
 
+// Build-number thresholds for WDB format changes.
+const (
+	// buildSoundOverride is the build that added SoundOverrideSubClass after SubClass.
+	buildSoundOverride = 6022
+	// buildTBC is the earliest TBC client build (~2.0.1). Adds sockets, gems,
+	// RequiredDisenchantSkill, and ArmorDamageModifier. Damage slots shrink from 5→2.
+	buildTBC = 6180
+	// buildWotLK is the earliest WotLK client build (~3.0.1). Adds Flags2,
+	// variable StatsCount, ScalingStatDistribution/Value, Duration,
+	// ItemLimitCategory, and HolidayID.
+	buildWotLK = 8606
+)
+
 // Item represents a parsed item from itemcache.wdb.
-// Field layout validated against WotLK 3.3.5a (build 12340, recordVersion 5).
+// Field layout varies by client build; see ParseItem for version-aware parsing.
 type Item struct {
 	Entry                   uint32
 	Class                   uint32
 	SubClass                uint32
-	SoundOverrideSubClass   int32
+	SoundOverrideSubClass   int32  // build >= 6022
 	Name                    string
 	Name2, Name3, Name4     string
 	DisplayID               uint32
 	Quality                 uint32
 	Flags                   uint32
-	Flags2                  uint32
+	Flags2                  uint32 // build >= 8606 (WotLK)
 	BuyPrice                uint32
 	SellPrice               uint32
 	InventoryType           uint32
@@ -32,14 +45,14 @@ type Item struct {
 	MaxCount                int32
 	Stackable               int32
 	ContainerSlots          uint32
-	StatsCount              uint32
+	StatsCount              uint32 // WotLK only; vanilla/TBC always write 10 pairs
 	StatType                [10]uint32
 	StatValue               [10]int32
-	ScalingStatDistribution int32
-	ScalingStatValue        int32
-	DmgMin                  [2]float32
-	DmgMax                  [2]float32
-	DmgType                 [2]uint32
+	ScalingStatDistribution int32 // build >= 8606 (WotLK)
+	ScalingStatValue        int32 // build >= 8606 (WotLK)
+	DmgMin                  [5]float32 // vanilla: 5 slots; TBC+: only [0:2] populated
+	DmgMax                  [5]float32
+	DmgType                 [5]uint32
 	Armor                   uint32
 	HolyRes                 uint32
 	FireRes                 uint32
@@ -74,32 +87,35 @@ type Item struct {
 	Map                     uint32
 	BagFamily               uint32
 	TotemCategory           uint32
-	SocketColor             [3]uint32
-	SocketContent           [3]uint32
-	SocketBonus             uint32
-	GemProperties           uint32
-	RequiredDisenchantSkill int32
-	ArmorDamageModifier     float32
-	Duration                int32
-	ItemLimitCategory       int32
-	HolidayID               int32
+	SocketColor             [3]uint32  // build >= 6180 (TBC)
+	SocketContent           [3]uint32  // build >= 6180 (TBC)
+	SocketBonus             uint32     // build >= 6180 (TBC)
+	GemProperties           uint32     // build >= 6180 (TBC)
+	RequiredDisenchantSkill int32      // build >= 6180 (TBC)
+	ArmorDamageModifier     float32    // build >= 6180 (TBC)
+	Duration                int32      // build >= 8606 (WotLK)
+	ItemLimitCategory       int32      // build >= 8606 (WotLK)
+	HolidayID               int32      // build >= 8606 (WotLK)
 }
 
 // ParseItem parses a single item record from itemcache.wdb.
-// The entry ID comes from the Record; data is the record payload.
-func ParseItem(rec Record) (Item, error) {
+// build is the client build number from the WDB header (Header.Version).
+// The binary layout differs between vanilla (≤5875), TBC, and WotLK clients.
+func ParseItem(rec Record, build uint32) (Item, error) {
 	it := Item{Entry: rec.EntryID}
 	r := newReader(rec.Data)
 	var err error
 
 	u := func() uint32 { var v uint32; if err == nil { v, err = r.Uint32() }; return v }
-	i := func() int32  { var v int32;  if err == nil { v, err = r.Int32() };  return v }
+	i := func() int32 { var v int32; if err == nil { v, err = r.Int32() }; return v }
 	f := func() float32 { var v float32; if err == nil { v, err = r.Float32() }; return v }
 	s := func() string { var v string; if err == nil { v, err = r.String() }; return v }
 
 	it.Class = u()
 	it.SubClass = u()
-	it.SoundOverrideSubClass = i()
+	if build >= buildSoundOverride {
+		it.SoundOverrideSubClass = i()
+	}
 	it.Name = s()
 	it.Name2 = s()
 	it.Name3 = s()
@@ -107,7 +123,9 @@ func ParseItem(rec Record) (Item, error) {
 	it.DisplayID = u()
 	it.Quality = u()
 	it.Flags = u()
-	it.Flags2 = u()
+	if build >= buildWotLK {
+		it.Flags2 = u()
+	}
 	it.BuyPrice = u()
 	it.SellPrice = u()
 	it.InventoryType = u()
@@ -125,22 +143,42 @@ func ParseItem(rec Record) (Item, error) {
 	it.MaxCount = i()
 	it.Stackable = i()
 	it.ContainerSlots = u()
-	it.StatsCount = u()
-	// Only StatsCount stat pairs are stored in the cache (not always 10).
-	for j := range int(it.StatsCount) {
-		if j >= 10 {
-			break
+
+	if build >= buildWotLK {
+		// WotLK: variable-length stat section preceded by count.
+		it.StatsCount = u()
+		for j := range int(it.StatsCount) {
+			if j >= 10 {
+				break
+			}
+			it.StatType[j] = u()
+			it.StatValue[j] = i()
 		}
-		it.StatType[j] = u()
-		it.StatValue[j] = i()
+	} else {
+		// Vanilla/TBC: always 10 stat pairs, no count prefix.
+		it.StatsCount = 10
+		for j := range 10 {
+			it.StatType[j] = u()
+			it.StatValue[j] = i()
+		}
 	}
-	it.ScalingStatDistribution = i()
-	it.ScalingStatValue = i()
-	for j := range 2 {
+
+	if build >= buildWotLK {
+		it.ScalingStatDistribution = i()
+		it.ScalingStatValue = i()
+	}
+
+	// Vanilla has 5 damage slots; TBC+ reduced to 2.
+	dmgSlots := 5
+	if build >= buildTBC {
+		dmgSlots = 2
+	}
+	for j := range dmgSlots {
 		it.DmgMin[j] = f()
 		it.DmgMax[j] = f()
 		it.DmgType[j] = u()
 	}
+
 	it.Armor = u()
 	it.HolyRes = u()
 	it.FireRes = u()
@@ -169,25 +207,35 @@ func ParseItem(rec Record) (Item, error) {
 	it.Material = i()
 	it.Sheath = u()
 	it.RandomProperty = i()
-	it.RandomSuffix = i()
+	if build >= buildTBC {
+		it.RandomSuffix = i() // TBC+ only
+	}
 	it.Block = u()
 	it.ItemSet = u()
 	it.MaxDurability = u()
 	it.Area = u()
 	it.Map = u()
 	it.BagFamily = u()
-	it.TotemCategory = u()
-	for j := range 3 {
-		it.SocketColor[j] = u()
-		it.SocketContent[j] = u()
+	if build >= buildTBC {
+		it.TotemCategory = u() // TBC+ only
 	}
-	it.SocketBonus = u()
-	it.GemProperties = u()
-	it.RequiredDisenchantSkill = i()
-	it.ArmorDamageModifier = f()
-	it.Duration = i()
-	it.ItemLimitCategory = i()
-	it.HolidayID = i()
+
+	if build >= buildTBC {
+		for j := range 3 {
+			it.SocketColor[j] = u()
+			it.SocketContent[j] = u()
+		}
+		it.SocketBonus = u()
+		it.GemProperties = u()
+		it.RequiredDisenchantSkill = i()
+		it.ArmorDamageModifier = f()
+	}
+
+	if build >= buildWotLK {
+		it.Duration = i()
+		it.ItemLimitCategory = i()
+		it.HolidayID = i()
+	}
 
 	if err != nil {
 		return it, fmt.Errorf("parse item %d: %w", rec.EntryID, err)

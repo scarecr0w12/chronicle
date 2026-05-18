@@ -30,7 +30,7 @@ package dbcmem
 //go:generate go run -tags kronos ../../../../scripts/dbcdata derived-statics --server=kronos --assets-dir=../../../../assets/kronos/generated --go-dir=kronos --ts-dir=../../../../frontend/chronicle/src/constants/dbmem/kronos
 //go:generate go run ../../../../scripts/dbcdata extract-dbc --server=kronos --out=../../../../assets/kronos
 //go:generate go run ../../../../scripts/dbcdata extract-icons --server=kronos --out=../../../../frontend/imagecache/kronos/blp
-//go:generate go run ../../../../scripts/dbcdata extract-loading-screens --server=kronos --out=../../../../frontend/imagecache/kronos/loading-screens
+//DISABLED go:generate go run ../../../../scripts/dbcdata extract-loading-screens --server=kronos --out=../../../../frontend/imagecache/kronos/loading-screens
 //go:generate go run -tags kronos ../../../../scripts/dbcdata spell-test-data --server=kronos --ts-dir=../../../../frontend/chronicle/src/api/testdata
 
 // Warmane (3.3.5a)
@@ -48,3 +48,19 @@ package dbcmem
 //go:generate go run ../../../../scripts/dbcdata extract-icons --server=ascension --out=../../../../frontend/imagecache/ascension/blp
 // DISABLED go:generate go run ../../../../scripts/dbcdata extract-loading-screens --server=ascension --out=../../../../frontend/imagecache/ascension/loading-screens
 //go:generate go run -tags ascension ../../../../scripts/dbcdata spell-test-data --server=ascension --ts-dir=../../../../frontend/chronicle/src/api/testdata
+
+// VanillaPlus (1.12.2)
+//go:generate go run ../../../../scripts/dbcdata static --server=vanillaplus -o vanillaplus
+//go:generate go run -tags vanillaplus ../../../../scripts/dbcdata derived-statics --server=vanillaplus --assets-dir=../../../../assets/vanillaplus/generated --go-dir=vanillaplus --ts-dir=../../../../frontend/chronicle/src/constants/dbmem/vanillaplus
+//go:generate go run ../../../../scripts/dbcdata extract-dbc --server=vanillaplus --out=../../../../assets/vanillaplus
+//go:generate go run ../../../../scripts/dbcdata extract-icons --server=vanillaplus --out=../../../../frontend/imagecache/vanillaplus/blp
+// DISABLED go:generate go run ../../../../scripts/dbcdata extract-loading-screens --server=vanillaplus --out=../../../../frontend/imagecache/vanillaplus/loading-screens
+//go:generate go run -tags vanillaplus ../../../../scripts/dbcdata spell-test-data --server=vanillaplus --ts-dir=../../../../frontend/chronicle/src/api/testdata
+
+// OctoWoW (1.12.x)
+//go:generate go run ../../../../scripts/dbcdata static --server=octowow -o octowow
+//go:generate go run -tags octowow ../../../../scripts/dbcdata derived-statics --server=octowow --assets-dir=../../../../assets/octowow/generated --go-dir=octowow --ts-dir=../../../../frontend/chronicle/src/constants/dbmem/octowow
+//go:generate go run ../../../../scripts/dbcdata extract-dbc --server=octowow --out=../../../../assets/octowow
+//go:generate go run ../../../../scripts/dbcdata extract-icons --server=octowow --out=../../../../frontend/imagecache/octowow/blp
+// DISABLED go:generate go run ../../../../scripts/dbcdata extract-loading-screens --server=octowow --out=../../../../frontend/imagecache/octowow/loading-screens
+//go:generate go run -tags octowow ../../../../scripts/dbcdata spell-test-data --server=octowow --ts-dir=../../../../frontend/chronicle/src/api/testdata

@@ -3108,8 +3108,8 @@ func init() {
 		4016: {ID: 4016, TextureFilename: "INV_Ingot_Cobalt"},
 		4017: {ID: 4017, TextureFilename: "INV_Weapon_Shortblade_37"},
 		4022: {ID: 4022, TextureFilename: "inv_gauntlets_12"},
-		4025: {ID: 4025, TextureFilename: "INTERFACE\\ICONS\\ability_hunter_pet_worm"},
-		4037: {ID: 4037, TextureFilename: "INTERFACE\\ICONS\\inv_misc_gear_05"},
-		4038: {ID: 4038, TextureFilename: "INTERFACE\\ICONS\\inv_shirt_09"},
+		4025: {ID: 4025, TextureFilename: "ability_hunter_pet_worm"},
+		4037: {ID: 4037, TextureFilename: "inv_misc_gear_05"},
+		4038: {ID: 4038, TextureFilename: "inv_shirt_09"},
 	}
 }

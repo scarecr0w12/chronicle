@@ -1,21 +1,12 @@
 import { useState, useMemo, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { Search, Shield, Users, Loader2 } from "lucide-react";
-import { useArmorySearch } from "@/api/queries";
+import { Search, Shield, Users, Loader2, Swords } from "lucide-react";
+import { useArmorySearch, useRealms } from "@/api/queries";
 import type { ArmorySearchResult } from "@/api/typesGenerated";
 import { getClassColorVar } from "@/pages/ArmoryPage/types";
+import { GuildSearchContent } from "@/pages/GuildSearch/GuildSearchContent";
 
-/** Static realm list matching database/dbstatic/dbstatic.go */
-const REALMS = [
-  { name: "Ambershire", id: "851d2fd3-f9c5-4623-b714-924b59d916aa" },
-  { name: "Tel'Abim", id: "f94d3103-1cd8-40e9-ad91-a2366de33354" },
-  { name: "Nordanaar", id: "bcf173a7-c94a-49fe-8930-27435d722fb7" },
-  { name: "South Seas", id: "ad486d39-31dd-4eb6-a43d-7d469df4ffcf" },
-  { name: "Gehennas", id: "c240e1e4-9d2b-46f7-b23c-6b55a37b4710" },
-  { name: "Ravenstorm", id: "885cd224-aa71-4592-81e2-98fe138ca650" },
-  { name: "Karazhan", id: "0f9825e5-8a88-4bfb-80f6-26b472c7a1aa" },
-  { name: "Blood Ring", id: "5f786828-1c60-4360-8b0f-14b7b494be3a" },
-] as const;
+type ArmoryTab = "characters" | "guilds";
 
 const WOW_CLASSES = [
   "Warrior",
@@ -52,6 +43,65 @@ function useDebounce<T>(value: T, delayMs: number): T {
 }
 
 export function ArmorySearchPage() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab: ArmoryTab = searchParams.get("tab") === "guilds" ? "guilds" : "characters";
+
+  const setTab = (tab: ArmoryTab) => {
+    const next = new URLSearchParams(searchParams);
+    if (tab === "guilds") next.set("tab", "guilds");
+    else next.delete("tab");
+    setSearchParams(next, { replace: true });
+  };
+
+  return (
+    <div className="max-w-5xl mx-auto p-4 md:p-8">
+      <div className="mb-6">
+        <h1 className="text-2xl font-bold flex items-center gap-2">
+          <Shield className="h-6 w-6 text-primary" />
+          Armory
+        </h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Search for characters and guilds seen in uploaded combat logs.
+        </p>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 mb-6 border-b border-border">
+        <button
+          onClick={() => setTab("characters")}
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === "characters"
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Swords className="h-4 w-4" />
+          Characters
+        </button>
+        <button
+          onClick={() => setTab("guilds")}
+          className={`flex items-center gap-1.5 px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+            activeTab === "guilds"
+              ? "border-primary text-foreground"
+              : "border-transparent text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          <Users className="h-4 w-4" />
+          Guilds
+        </button>
+      </div>
+
+      {activeTab === "guilds" ? (
+        <GuildSearchContent />
+      ) : (
+        <CharacterSearchContent />
+      )}
+    </div>
+  );
+}
+
+function CharacterSearchContent() {
+  const { data: realms } = useRealms();
   const [searchParams, setSearchParams] = useSearchParams();
 
   const query = searchParams.get("q") ?? "";
@@ -97,17 +147,7 @@ export function ArmorySearchPage() {
   };
 
   return (
-    <div className="max-w-5xl mx-auto p-4 md:p-8">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold flex items-center gap-2">
-          <Shield className="h-6 w-6 text-primary" />
-          Armory
-        </h1>
-        <p className="text-sm text-muted-foreground mt-1">
-          Search for characters seen in uploaded combat logs.
-        </p>
-      </div>
-
+    <div>
       {/* Search + Filters */}
       <div className="space-y-3 mb-6">
         {/* Name search */}
@@ -131,7 +171,7 @@ export function ArmorySearchPage() {
             className="bg-card border border-border rounded-lg px-3 py-2 text-sm min-w-[140px] focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring"
           >
             <option value="">All Realms</option>
-            {REALMS.map((r) => (
+            {realms?.map((r) => (
               <option key={r.id} value={r.id}>
                 {r.name}
               </option>
